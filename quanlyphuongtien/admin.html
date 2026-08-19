@@ -58,6 +58,9 @@
   .search-box input{padding:8px 12px 8px 32px;border:1.5px solid #ddd;border-radius:8px;font-size:.88rem;min-width:200px}
   .search-box input:focus{border-color:var(--color-primary);outline:none}
   .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%)}
+  .hidden{display:none!important}
+  .role-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.78rem;font-weight:600;background:rgba(255,255,255,.2);color:#fff}
+  .sub-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f7f8fa;border:1px solid #eee;border-radius:8px;margin-bottom:6px}
   @media(max-width:600px){.header h1{font-size:1.2rem}.cards{grid-template-columns:1fr}.search-box input{min-width:0;width:100%}}
   </style>
 </head>
@@ -84,6 +87,7 @@
     <p>Xem tất cả phương tiện đã nộp — Dữ liệu từ Google Sheets</p>
     <div style="margin-top:10px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap">
       <a href="index.html" style="color:#fff;opacity:.8;font-size:.85rem;text-decoration:underline">← Trang nhập liệu</a>
+      <span id="roleBadge" class="role-badge"></span>
       <button class="logout-btn" id="btnLogout">🚪 Đăng xuất</button>
     </div>
   </header>
@@ -100,18 +104,29 @@
     <div class="actions-bar">
       <button class="btn btn-outline" id="btnRefresh">🔄 Làm mới</button>
       <button class="btn btn-success" id="btnExportAll">📥 Xuất Excel tổng hợp</button>
-      <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:#555;cursor:pointer;user-select:none"><input type="checkbox" id="chkAll" style="width:16px;height:16px;cursor:pointer"> Chọn tất cả</label>
-      <button class="btn btn-danger btn-sm" id="btnDeleteSelected">🗑️ Xóa mục đã chọn</button>
+      <label class="admin-only" style="display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:#555;cursor:pointer;user-select:none"><input type="checkbox" id="chkAll" style="width:16px;height:16px;cursor:pointer"> Chọn tất cả</label>
+      <button class="btn btn-danger btn-sm admin-only" id="btnDeleteSelected">🗑️ Xóa mục đã chọn</button>
       <div class="search-box" style="margin-left:auto"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Lọc theo tên, SĐT, email, biển số, đơn vị..."></div>
     </div>
 
-    <div class="pw-box">
-      <h3>🔧 Đổi mật khẩu quản lý</h3>
+    <div class="pw-box admin-only">
+      <h3>🔧 Đổi mật khẩu quản lý (admin chính)</h3>
       <div class="pw-row">
         <div class="fg"><label>Tài khoản mới</label><input type="text" id="newUser"></div>
         <div class="fg"><label>Mật khẩu mới</label><input type="password" id="newPass"></div>
         <button class="btn btn-outline" id="btnChgPw" style="height:42px;margin-bottom:16px">💾 Lưu</button>
       </div>
+    </div>
+
+    <div class="pw-box admin-only">
+      <h3>👥 Quản lý tài khoản con (chỉ xem, không xóa)</h3>
+      <p style="font-size:.82rem;color:#888;margin-bottom:12px">Tạo tài khoản cho nhân viên đăng nhập chỉ để xem &amp; xuất Excel — không xóa được dữ liệu.</p>
+      <div class="pw-row">
+        <div class="fg"><label>Tài khoản con</label><input type="text" id="subUser" placeholder="VD: nhanvien1"></div>
+        <div class="fg"><label>Mật khẩu</label><input type="text" id="subPass" placeholder="Mật khẩu cho tài khoản con"></div>
+        <button class="btn btn-outline" id="btnAddSub" style="height:42px;margin-bottom:16px">➕ Thêm / Cập nhật</button>
+      </div>
+      <div id="subList" style="font-size:.88rem"></div>
     </div>
 
     <div id="subsList"></div>
@@ -137,7 +152,7 @@ document.getElementById('loginForm').addEventListener('submit',function(e){
   var u=document.getElementById('loginUser').value.trim(), p=document.getElementById('loginPass').value;
   callApi({action:'verify',user:u,pass:p}).then(function(r){
     if(r&&r.status==='success'&&r.ok){
-      adminCred={user:u,pass:p};
+      adminCred={user:u,pass:p,role:r.role||'admin'};
       try{sessionStorage.setItem('admin_cred',JSON.stringify(adminCred))}catch(e){}
       showDash();
     }else{document.getElementById('loginErr').style.display='block'}
@@ -164,16 +179,52 @@ document.getElementById('btnChgPw').addEventListener('click',function(){
   if(!u||!p){showToast('Nhập đủ tài khoản và mật khẩu!','error');return}
   callApi({action:'setCred',user:adminCred.user,pass:adminCred.pass,newUser:u,newPass:p}).then(function(r){
     if(r&&r.status==='success'){
-      adminCred={user:u,pass:p};
+      adminCred={user:u,pass:p,role:'admin'};
       try{sessionStorage.setItem('admin_cred',JSON.stringify(adminCred))}catch(e){}
       showToast('Đã đổi mật khẩu!');document.getElementById('newUser').value='';document.getElementById('newPass').value='';
     }else{showToast('Lỗi: '+(r?r.message:''),'error')}
   }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
 });
 
+/* ===== Quản lý tài khoản con (chỉ admin) ===== */
+document.getElementById('btnAddSub').addEventListener('click',function(){
+  var u=document.getElementById('subUser').value.trim(), p=document.getElementById('subPass').value;
+  if(!u||!p){showToast('Nhập đủ tài khoản con và mật khẩu!','error');return}
+  callApi({action:'addSub',user:adminCred.user,pass:adminCred.pass,newUser:u,newPass:p}).then(function(r){
+    if(r&&r.status==='success'){showToast('Đã thêm/cập nhật tài khoản con');document.getElementById('subUser').value='';document.getElementById('subPass').value='';loadSubAccounts()}
+    else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+});
+function loadSubAccounts(){
+  if(!adminCred||adminCred.role!=='admin')return;
+  callApi({action:'listSub',user:adminCred.user,pass:adminCred.pass}).then(function(r){
+    var box=document.getElementById('subList');if(!box)return;
+    var accs=(r&&r.accounts)||[];
+    if(accs.length===0){box.innerHTML='<p style="color:#999">Chưa có tài khoản con nào.</p>';return}
+    var h='';
+    for(var i=0;i<accs.length;i++){var a=accs[i];h+='<div class="sub-item"><span>👤 <strong>'+esc(a.user)+'</strong> &nbsp; MK: <code>'+esc(a.pass)+'</code></span><button class="btn btn-danger btn-sm" onclick="removeSub(\''+esc(a.user)+'\')">🗑️ Xóa</button></div>'}
+    box.innerHTML=h;
+  }).catch(function(){});
+}
+function removeSub(u){
+  if(!confirm('Xóa tài khoản con "'+u+'"?'))return;
+  callApi({action:'removeSub',user:adminCred.user,pass:adminCred.pass,targetUser:u}).then(function(r){
+    if(r&&r.status==='success'){showToast('Đã xóa tài khoản con');loadSubAccounts()}
+    else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+}
+
 /* Khôi phục phiên đăng nhập */
 try{var sc=sessionStorage.getItem('admin_cred');if(sc){adminCred=JSON.parse(sc);showDash()}}catch(e){}
-function showDash(){document.getElementById('loginScreen').style.display='none';document.getElementById('dash').classList.add('active');loadData()}
+function showDash(){document.getElementById('loginScreen').style.display='none';document.getElementById('dash').classList.add('active');applyRole();loadData()}
+function applyRole(){
+  var isAdmin=adminCred&&adminCred.role==='admin';
+  var els=document.querySelectorAll('.admin-only');
+  for(var i=0;i<els.length;i++)els[i].classList.toggle('hidden',!isAdmin);
+  var rb=document.getElementById('roleBadge');
+  if(rb)rb.textContent=(adminCred?adminCred.user:'')+' · '+(isAdmin?'Toàn quyền':'Chỉ xem');
+  if(isAdmin)loadSubAccounts();
+}
 
 function loadData(){
   if(!adminCred){return}
@@ -205,18 +256,19 @@ function renderAll(){
   var sorted=submissions.slice().sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp)}).filter(matchFilter);
   if(sorted.length===0){c.innerHTML='<div style="text-align:center;padding:40px 20px;color:#999"><span style="font-size:2.5rem;display:block;margin-bottom:8px">🔍</span><p>Không có lượt nộp nào khớp "'+esc(filterTerm)+'"</p></div>';return}
 
+  var isAdmin=adminCred&&adminCred.role==='admin';
   var h='';
   for(var i=0;i<sorted.length;i++){
     var s=sorted[i],tm=fmtT(s.timestamp);
     h+='<div class="sub-card"><div class="sub-hdr" onclick="togSub(this)">';
-    h+='<input type="checkbox" class="sub-chk" data-id="'+esc(s.id)+'" onclick="event.stopPropagation()" style="width:18px;height:18px;flex-shrink:0;cursor:pointer">';
+    if(isAdmin)h+='<input type="checkbox" class="sub-chk" data-id="'+esc(s.id)+'" onclick="event.stopPropagation()" style="width:18px;height:18px;flex-shrink:0;cursor:pointer">';
     h+='<div class="sub-info">';
     h+='<span class="name">👤 '+esc(s.submitter.hoTen)+'</span>';
     h+='<span class="meta">📞 '+esc(s.submitter.sdt)+'</span>';
     h+='<span class="meta">📧 '+esc(s.submitter.email)+'</span></div>';
     h+='<span class="badge bg-green">🚗 '+s.vehicleCount+' xe</span>';
     h+='<span class="badge bg-blue">🕐 '+tm+'</span>';
-    h+='<button class="del-btn" onclick="event.stopPropagation();delSub(\''+s.id+'\')" title="Xóa">🗑️</button>';
+    if(isAdmin)h+='<button class="del-btn" onclick="event.stopPropagation();delSub(\''+s.id+'\')" title="Xóa">🗑️</button>';
     h+='<span class="arrow">▼</span></div>';
     h+='<div class="sub-body"><div class="sub-detail">';
     h+='<span>👤 <strong>'+esc(s.submitter.hoTen)+'</strong></span>';
