@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Danh Sách Xe Gửi Cơ Quan</title>
+  <style>
+  :root{--color-primary:#1565c0;--color-primary-dark:#0d47a1;--color-indigo:#1a237e;--color-success:#2e7d32;--color-danger:#c62828;--color-bg:#f0f2f5;--color-card:#fff;--color-text:#1a1a2e;--color-border:#e0e0e0;--radius:12px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--color-bg);color:var(--color-text);line-height:1.6}
+  .app-header{background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;padding:28px 24px;text-align:center}
+  .app-header h1{font-size:1.6rem;margin-bottom:4px}.app-header p{opacity:.85;font-size:.9rem}
+  .container{max-width:1200px;margin:0 auto;padding:20px 16px}
+  .card{background:var(--color-card);border-radius:var(--radius);box-shadow:0 2px 12px rgba(0,0,0,.06);padding:24px;margin-bottom:20px;border:1px solid var(--color-border)}
+  .card-title{font-size:1.1rem;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .card-title .icon{font-size:1.3rem}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px 16px}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-weight:600;margin-bottom:6px;font-size:.85rem;color:#444}
+  .form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:.92rem;background:#fff}
+  .form-group input:focus,.form-group select:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(21,101,192,.1);outline:none}
+  .required{color:var(--color-danger);font-weight:700}
+  .submitter-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 16px;margin-bottom:16px;padding-bottom:16px;border-bottom:2px solid #e3f2fd}
+  .btn{padding:10px 20px;border:none;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:var(--color-primary);color:#fff}.btn-primary:hover{background:var(--color-primary-dark)}
+  .btn-success{background:var(--color-success);color:#fff}.btn-success:hover{background:#1b5e20}
+  .btn-danger{background:var(--color-danger);color:#fff}.btn-danger:hover{background:#b71c1c}
+  .btn-outline{background:#fff;color:var(--color-primary);border:1.5px solid var(--color-primary)}.btn-outline:hover{background:#e3f2fd}
+  .btn-sm{padding:6px 14px;font-size:.82rem}.btn:disabled{opacity:.6;cursor:not-allowed}
+  .action-bar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .action-bar-between{justify-content:space-between;align-items:center}
+  .action-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .table-wrapper{overflow-x:auto;border-radius:8px;border:1px solid var(--color-border)}
+  .data-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .data-table th{background:#f5f7fa;padding:10px 12px;text-align:left;font-weight:600;color:#444;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+  .data-table td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+  .data-table tr:hover{background:#f8f9ff}
+  .data-table .stt-col{text-align:center;width:48px}
+  .data-table .actions{display:flex;gap:6px}.data-table .actions button{padding:4px 10px;font-size:.78rem;border-radius:6px}
+  .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+  .toast{padding:12px 20px;border-radius:8px;color:#fff;font-size:.88rem;font-weight:500;transform:translateX(120%);transition:transform .3s;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:400px}
+  .toast.show{transform:translateX(0)}.toast.success{background:var(--color-success)}.toast.error{background:var(--color-danger)}.toast.info{background:#455a64}
+  .empty-state{text-align:center;padding:40px 20px;color:#999}.empty-state .empty-icon{font-size:3rem;margin-bottom:8px;display:block}
+  .upload-zone{position:relative;border:2px dashed #90caf9;border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:all .3s;background:#f8fbff}
+  .upload-zone:hover,.upload-zone.dragover{border-color:var(--color-primary);background:#e3f2fd}
+  .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .upload-zone .upload-icon{font-size:2.5rem;margin-bottom:8px;display:block}
+  .upload-zone .upload-text{font-size:.95rem}.upload-zone .upload-hint{font-size:.8rem;color:#888;margin-top:6px}
+  .stats-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .stat-item{font-size:.88rem;color:#666}.stat-value{font-weight:700;color:var(--color-primary);font-size:1rem}
+  .search-box{position:relative}
+  .search-box input{padding:8px 12px 8px 32px;border:1.5px solid #ddd;border-radius:8px;font-size:.88rem;min-width:200px}
+  .search-box input:focus{border-color:var(--color-primary);outline:none}
+  .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%)}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.submitter-section{grid-template-columns:1fr}.app-header h1{font-size:1.2rem}.action-bar-between{flex-direction:column;align-items:stretch}.search-box input{min-width:0;width:100%}}
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>📋 Quản Lý Danh Sách Xe Gửi Cơ Quan</h1>
+    <p>Nhập liệu, upload Excel &amp; xuất báo cáo theo mẫu quy định</p>
+    <div style="margin-top:10px">
+      <a href="admin.html" style="color:#fff;opacity:0.8;font-size:0.85rem;text-decoration:underline">🔑 Trang tổng hợp (Quản lý)</a>
+    </div>
+  </header>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="container">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">👤</span> Thông tin người nộp</div>
+      <div class="submitter-section">
+        <div class="form-group"><label>Họ và tên <span class="required">*</span></label><input type="text" id="submitterName" placeholder="VD: Nguyễn Văn A"></div>
+        <div class="form-group"><label>Số điện thoại <span class="required">*</span></label><input type="tel" id="submitterPhone" placeholder="VD: 0901234567"></div>
+        <div class="form-group"><label>Email <span class="required">*</span></label><input type="email" id="submitterEmail" placeholder="VD: email@gmail.com"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📤</span> Upload file Excel</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls">
+        <span class="upload-icon">📂</span>
+        <div class="upload-text">Kéo thả file Excel vào đây hoặc <strong>nhấn để chọn file</strong></div>
+        <div class="upload-hint">Hỗ trợ file .xlsx theo mẫu "Danh sách xe gửi các cơ quan"</div>
+      </div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="btn btn-outline" id="btnTemplate" type="button">📄 Tải file Excel mẫu</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="formTitle"><span class="icon">📝</span> Thêm xe mới</div>
+      <form id="vehicleForm">
+        <div class="form-grid">
+          <div class="form-group"><label>Tên Đơn vị KDVT <span class="required">*</span></label><input type="text" id="f_donVi" placeholder="VD: Công ty TNHH ABC"></div>
+          <div class="form-group"><label>Mã số ĐKKD đơn vị <span class="required">*</span></label><input type="text" id="f_maSoDKKD" placeholder="VD: 0123456789"></div>
+          <div class="form-group"><label>Địa chỉ đơn vị ĐKKDVT <span class="required">*</span></label><input type="text" id="f_diaChiDV" placeholder="VD: 123 Nguyễn Trãi, TP.HCM"></div>
+          <div class="form-group"><label>Biển số <span class="required">*</span></label><input type="text" id="f_bienSo" placeholder="VD: 51C12345"></div>
+          <div class="form-group"><label>Số Phù hiệu <span class="required">*</span></label><input type="text" id="f_soPhuhieu" placeholder="VD: PH-001"></div>
+          <div class="form-group"><label>Loại Phù Hiệu <span class="required">*</span></label>
+            <select id="f_loaiPH">
+              <option value="">-- Chọn loại --</option>
+              <option value="Xe chạy tuyến cố định">Xe chạy tuyến cố định</option>
+              <option value="Xe Buýt">Xe Buýt</option>
+              <option value="Xe Hợp đồng">Xe Hợp đồng</option>
+              <option value="Xe Tải">Xe Tải</option>
+              <option value="Xe Taxi">Xe Taxi</option>
+              <option value="Xe Trung chuyển">Xe Trung chuyển</option>
+            </select>
+          </div>
+          <div class="form-group"><label id="labelTaiTrong">Tải trọng HH (Kg) <span class="required">*</span></label><input type="text" id="f_taiTrong" placeholder="VD: 5000"></div>
+          <div class="form-group"><label>Chủ sở hữu / SĐT <span class="required">*</span></label><input type="text" id="f_chuSoHuu" placeholder="VD: Nguyễn Văn A / 0901..."></div>
+          <div class="form-group"><label>Địa chỉ chủ xe <span class="required">*</span></label><input type="text" id="f_diaChiChu" placeholder="VD: 456 Lê Lợi, Hà Nội"></div>
+          <div class="form-group"><label>Lái xe / SĐT <span class="required">*</span></label><input type="text" id="f_laiXe" placeholder="VD: Trần Văn B / 0912..."></div>
+          <div class="form-group"><label>Địa chỉ lái xe <span class="required">*</span></label><input type="text" id="f_diaChiLX" placeholder="VD: 789 Trần Phú"></div>
+          <div class="form-group"><label>Niên hạn <span class="required">*</span></label><input type="text" id="f_nienHan" placeholder="0 nếu không niên hạn"></div>
+          <div class="form-group"><label>Tài khoản GSHT <span class="required">*</span></label><input type="text" id="f_taiKhoan" placeholder="Tài khoản thiết bị"></div>
+          <div class="form-group"><label>Mật khẩu GSHT <span class="required">*</span></label><input type="text" id="f_matKhau" placeholder="Mật khẩu thiết bị"></div>
+          <div class="form-group"><label>Đường dẫn đăng nhập <span class="required">*</span></label><input type="text" id="f_dvCungCap" placeholder="VD: https://gps.viettel.vn"></div>
+          <div class="form-group"><label>Ghi chú</label><input type="text" id="f_ghiChu" placeholder="Ghi chú thêm..."></div>
+        </div>
+        <div class="action-bar">
+          <button type="submit" class="btn btn-primary" id="btnAdd">➕ Thêm xe</button>
+          <button type="button" class="btn btn-outline" id="btnCancel" style="display:none">✕ Hủy sửa</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🚛</span> Danh sách xe đã nhập</div>
+      <div class="action-bar action-bar-between" style="margin-top:0;margin-bottom:16px">
+        <div class="action-group">
+          <div class="stats-bar"><div class="stat-item">Tổng số xe: <span class="stat-value" id="count">0</span></div></div>
+          <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Tìm kiếm xe..."></div>
+        </div>
+        <div class="action-group">
+          <button class="btn btn-success" id="btnExport">📥 Xuất file Excel</button>
+          <button class="btn btn-danger btn-sm" id="btnClearAll">🗑️ Xóa tất cả</button>
+        </div>
+      </div>
+      <div class="empty-state" id="empty"><span class="empty-icon">🚗</span><p>Chưa có xe nào trong danh sách</p><p style="font-size:0.82rem;margin-top:4px">Hãy thêm xe thủ công hoặc upload file Excel</p></div>
+      <p style="color:#888;font-size:.8rem;margin-bottom:8px">↔ Kéo ngang để xem hết các cột. Có thể bôi đen để sao chép.</p>
+      <div class="table-wrapper" id="tblWrap" style="display:none">
+        <table class="data-table" style="white-space:nowrap"><thead><tr>
+          <th class="stt-col">STT</th>
+          <th>Tên Đơn vị KDVT</th>
+          <th>Mã ĐKKD</th>
+          <th>Địa chỉ đơn vị</th>
+          <th>Biển số</th>
+          <th>Số Phù hiệu</th>
+          <th>Loại Phù Hiệu</th>
+          <th>Tải trọng/Số ghế</th>
+          <th>Chủ sở hữu / SĐT</th>
+          <th>Địa chỉ chủ xe</th>
+          <th>Lái xe / SĐT</th>
+          <th>Địa chỉ lái xe</th>
+          <th>Niên hạn</th>
+          <th>TK GSHT</th>
+          <th>MK GSHT</th>
+          <th>Đường dẫn đăng nhập</th>
+          <th>Ghi chú</th>
+          <th>Thao tác</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="card" id="submitCard" style="display:none;text-align:center;background:linear-gradient(135deg,#e8f5e9,#fff)">
+      <div class="card-title" style="justify-content:center"><span class="icon">📨</span> Gửi danh sách xe</div>
+      <p style="color:#666;margin-bottom:16px">Sau khi kiểm tra danh sách, nhấn để gửi lên bộ phận tổng hợp</p>
+      <button class="btn btn-success" id="btnSubmit" style="padding:14px 40px;font-size:1rem">✅ Gửi danh sách</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> Xem hồ sơ đã nộp</div>
+      <p style="color:#666;margin-bottom:16px;font-size:.88rem">Nhập đúng SĐT và Email đã dùng khi nộp để xem lại hồ sơ của bạn</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="flex:1;min-width:180px"><label>Số điện thoại</label><input type="tel" id="lkPhone" placeholder="SĐT đã nộp"></div>
+        <div class="form-group" style="flex:1;min-width:180px"><label>Email</label><input type="email" id="lkEmail" placeholder="Email đã nộp"></div>
+        <button class="btn btn-outline" id="btnLookup" style="height:44px;margin-bottom:16px">🔍 Tra cứu</button>
+      </div>
+      <div id="lkResult"></div>
+    </div>
+
+  </div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+/* ===== CẤU HÌNH API — dán URL web app Apps Script của bạn vào đây ===== */
+var API_URL='https://script.google.com/macros/s/AKfycbxdv98ykDOkmrjnr_sd-RaKfi7Gx3114HEgh5yLzJ5TA0Jw1oR4vMDsIMnKHIXBnnZs/exec';
+function callApi(payload){
+  return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){return r.json()});
+}
+
+/* ===== Định nghĩa trường ===== */
+var KEYS=['donVi','maSoDKKD','diaChiDV','bienSo','soPhuhieu','loaiPH','taiTrong','chuSoHuu','diaChiChu','laiXe','diaChiLX','nienHan','taiKhoan','matKhau','dvCungCap','ghiChu'];
+var REQ=KEYS.filter(function(k){return k!=='ghiChu'});
+var LABELS={donVi:'Đơn vị',maSoDKKD:'Mã ĐKKD',diaChiDV:'Địa chỉ ĐV',bienSo:'Biển số',soPhuhieu:'Số PH',loaiPH:'Loại PH',taiTrong:'Tải trọng/Ghế',chuSoHuu:'Chủ xe',diaChiChu:'ĐC chủ xe',laiXe:'Lái xe',diaChiLX:'ĐC lái xe',nienHan:'Niên hạn',taiKhoan:'TK GSHT',matKhau:'MK GSHT',dvCungCap:'Đường dẫn ĐN',ghiChu:'Ghi chú'};
+var DRAFT_KEY='vehicle_list_draft', SUBMITTER_KEY='vehicle_list_submitter';
+var vehicles=[], editIdx=-1;
+
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function showToast(m,t){var c=document.getElementById('toastContainer');var d=document.createElement('div');d.className='toast '+(t||'success');d.textContent=m;c.appendChild(d);setTimeout(function(){d.classList.add('show')},10);setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},3500)}
+function gv(k){var el=document.getElementById('f_'+k);return el?el.value.trim():''}
+function sv(k,v){var el=document.getElementById('f_'+k);if(el)el.value=v||''}
+function fmtT(iso){var d=new Date(iso);function p(n){return n<10?'0'+n:''+n}return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())}
+function val(id){var el=document.getElementById(id);return el?el.value.trim():''}
+function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v||''}
+
+function saveDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(vehicles))}catch(e){}}
+function loadDraft(){try{var d=localStorage.getItem(DRAFT_KEY);if(d)vehicles=JSON.parse(d)||[]}catch(e){vehicles=[]}}
+function saveSubmitter(){try{localStorage.setItem(SUBMITTER_KEY,JSON.stringify({hoTen:val('submitterName'),sdt:val('submitterPhone'),email:val('submitterEmail')}))}catch(e){}}
+function loadSubmitter(){try{var d=localStorage.getItem(SUBMITTER_KEY);if(d){var i=JSON.parse(d);setVal('submitterName',i.hoTen);setVal('submitterPhone',i.sdt);setVal('submitterEmail',i.email)}}catch(e){}}
+
+function validateSubmitter(){
+  if(!val('submitterName')){showToast('Nhập Họ tên người nộp!','error');document.getElementById('submitterName').focus();return false}
+  if(!val('submitterPhone')){showToast('Nhập SĐT người nộp!','error');document.getElementById('submitterPhone').focus();return false}
+  if(!val('submitterEmail')){showToast('Nhập Email người nộp!','error');document.getElementById('submitterEmail').focus();return false}
+  return true;
+}
+
+loadDraft();loadSubmitter();render();
+
+document.getElementById('f_bienSo').addEventListener('input',function(){this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase()});
+document.getElementById('f_loaiPH').addEventListener('change',updateTaiTrongLabel);
+document.getElementById('searchInput').addEventListener('input',render);
+['submitterName','submitterPhone','submitterEmail'].forEach(function(id){document.getElementById(id).addEventListener('change',saveSubmitter)});
+
+function updateTaiTrongLabel(){
+  var v=document.getElementById('f_loaiPH').value, l=document.getElementById('labelTaiTrong'), inp=document.getElementById('f_taiTrong');
+  if(v==='Xe Tải'){l.innerHTML='Tải trọng HH (Kg) <span class="required">*</span>';inp.placeholder='VD: 5000'}
+  else if(v===''){l.innerHTML='Tải trọng HH (Kg) <span class="required">*</span>';inp.placeholder='VD: 5000'}
+  else{l.innerHTML='Số ghế ngồi <span class="required">*</span>';inp.placeholder='VD: 16'}
+}
+
+document.getElementById('vehicleForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!validateSubmitter())return;
+  var data={};
+  for(var i=0;i<KEYS.length;i++){data[KEYS[i]]=gv(KEYS[i])}
+  for(var i=0;i<REQ.length;i++){
+    if(!data[REQ[i]]){showToast('Nhập "'+LABELS[REQ[i]]+'"!','error');var el=document.getElementById('f_'+REQ[i]);if(el)el.focus();return}
+  }
+  saveSubmitter();
+  if(editIdx>=0){vehicles[editIdx]=data;showToast('Đã cập nhật xe '+data.bienSo);editIdx=-1}
+  else{vehicles.push(data);showToast('Đã thêm xe '+data.bienSo)}
+  saveDraft();render();clearForm();
+});
+
+document.getElementById('btnCancel').addEventListener('click',clearForm);
+
+function clearForm(){
+  for(var i=0;i<KEYS.length;i++){sv(KEYS[i],'')}
+  editIdx=-1;
+  updateTaiTrongLabel();
+  document.getElementById('formTitle').innerHTML='<span class="icon">📝</span> Thêm xe mới';
+  document.getElementById('btnAdd').textContent='➕ Thêm xe';
+  document.getElementById('btnCancel').style.display='none';
+}
+
+function render(){
+  var tb=document.getElementById('tbody'),em=document.getElementById('empty'),w=document.getElementById('tblWrap'),c=document.getElementById('count'),sc=document.getElementById('submitCard');
+  c.textContent=vehicles.length;sc.style.display=vehicles.length>0?'block':'none';
+  if(vehicles.length===0){em.style.display='block';w.style.display='none';return}
+  em.style.display='none';w.style.display='block';
+  var term=(document.getElementById('searchInput').value||'').toLowerCase();
+  var h='',shown=0;
+  for(var i=0;i<vehicles.length;i++){
+    var v=vehicles[i];
+    if(term){var comb=Object.keys(v).map(function(k){return v[k]}).join(' ').toLowerCase();if(comb.indexOf(term)<0)continue}
+    shown++;
+    var unit=v.loaiPH==='Xe Tải'?' Kg':' ghế';
+    h+='<tr>'+
+      '<td class="stt-col">'+(i+1)+'</td>'+
+      '<td>'+esc(v.donVi)+'</td>'+
+      '<td>'+esc(v.maSoDKKD)+'</td>'+
+      '<td>'+esc(v.diaChiDV)+'</td>'+
+      '<td><strong>'+esc(v.bienSo)+'</strong></td>'+
+      '<td>'+esc(v.soPhuhieu)+'</td>'+
+      '<td>'+esc(v.loaiPH)+'</td>'+
+      '<td>'+esc(v.taiTrong)+(v.taiTrong?unit:'')+'</td>'+
+      '<td>'+esc(v.chuSoHuu)+'</td>'+
+      '<td>'+esc(v.diaChiChu)+'</td>'+
+      '<td>'+esc(v.laiXe)+'</td>'+
+      '<td>'+esc(v.diaChiLX)+'</td>'+
+      '<td>'+esc(v.nienHan)+'</td>'+
+      '<td>'+esc(v.taiKhoan)+'</td>'+
+      '<td>'+esc(v.matKhau)+'</td>'+
+      '<td>'+esc(v.dvCungCap)+'</td>'+
+      '<td>'+esc(v.ghiChu)+'</td>'+
+      '<td class="actions"><button class="btn btn-outline btn-sm" onclick="editV('+i+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="delV('+i+')">🗑️</button></td>'+
+    '</tr>';
+  }
+  if(term&&shown===0){h='<tr><td colspan="18" style="text-align:center;color:#999;padding:20px">Không tìm thấy xe khớp "'+esc(term)+'"</td></tr>'}
+  tb.innerHTML=h;
+}
+
+function editV(i){var v=vehicles[i];for(var j=0;j<KEYS.length;j++){sv(KEYS[j],v[KEYS[j]]||'')}updateTaiTrongLabel();editIdx=i;document.getElementById('formTitle').innerHTML='<span class="icon">✏️</span> Sửa thông tin xe';document.getElementById('btnAdd').textContent='💾 Cập nhật';document.getElementById('btnCancel').style.display='';window.scrollTo({top:0,behavior:'smooth'})}
+function delV(i){
+  if(!confirm('Xóa xe '+(vehicles[i].bienSo||'(trống)')+'?'))return;
+  if(editIdx===i){clearForm()} else if(editIdx>i){editIdx--}
+  vehicles.splice(i,1);saveDraft();render();showToast('Đã xóa xe','info');
+}
+
+document.getElementById('btnClearAll').addEventListener('click',function(){
+  if(vehicles.length===0)return;
+  if(!confirm('Xóa toàn bộ '+vehicles.length+' xe trong danh sách?'))return;
+  vehicles=[];saveDraft();render();clearForm();showToast('Đã xóa toàn bộ danh sách','info');
+});
+
+/* ===== Upload Excel ===== */
+var zone=document.getElementById('uploadZone'),fileInput=document.getElementById('fileInput');
+zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('dragover')});
+zone.addEventListener('dragleave',function(){zone.classList.remove('dragover')});
+zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('dragover');var f=e.dataTransfer.files[0];if(f)processExcel(f)});
+fileInput.addEventListener('change',function(e){var f=e.target.files[0];if(f)processExcel(f);e.target.value=''});
+
+function processExcel(file){
+  if(!file.name.match(/\.xlsx?$/i)){showToast('Vui lòng chọn file Excel (.xlsx)','error');return}
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=new Uint8Array(e.target.result);
+      var wb=XLSX.read(data,{type:'array'});
+      var sheet=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+      var imported=0;
+      for(var i=2;i<rows.length;i++){
+        var r=rows[i];
+        if(!r||r.length===0)continue;
+        var hasData=r.slice(1).some(function(c){return c!==''&&c!==null&&c!==undefined});
+        if(!hasData)continue;
+        vehicles.push({
+          donVi:String(r[1]||''),maSoDKKD:String(r[2]||''),diaChiDV:String(r[3]||''),
+          bienSo:String(r[4]||''),soPhuhieu:String(r[5]||''),loaiPH:String(r[6]||''),
+          taiTrong:String(r[7]||''),chuSoHuu:String(r[8]||''),diaChiChu:String(r[9]||''),
+          laiXe:String(r[10]||''),diaChiLX:String(r[11]||''),nienHan:String(r[12]||''),
+          taiKhoan:String(r[13]||''),matKhau:String(r[14]||''),dvCungCap:String(r[15]||''),ghiChu:String(r[16]||'')
+        });
+        imported++;
+      }
+      saveDraft();render();
+      if(imported>0)showToast('Đã nhập '+imported+' xe từ "'+file.name+'"');
+      else showToast('Không tìm thấy dữ liệu xe trong file (bắt đầu từ dòng 3)','error');
+    }catch(err){showToast('Lỗi đọc file Excel: '+err.message,'error')}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ===== Tạo worksheet đúng mẫu cơ quan ===== */
+function buildOfficialSheet(list){
+  var header1=['STT','Tên Đơn vị Kinh Doanh vận tải','Mã số Đăng ký kinh doanh đơn vị','Địa chỉ đơn vị Đăng ký KDVT','Biển số','Số Phù hiệu','Loại Phù Hiệu','Tải trọng Hàng Hóa (theo đăng ký xe)\n(Kg)','Tên chủ sở hữu (theo đăng ký xe)/ số điện thoại chủ xe','Địa chỉ chủ Phương tiện','Họ tên Lái xe/ Số điện thoại lái xe','Địa chỉ lái xe','Niên hạn \n sử dụng\n(nếu không niên hạn ghi số 0)','Thiết bị giám sát hành trình và \n thiết bị ghi nhận hình ảnh người lái xe','','','Ghi chú'];
+  var header2=['','','','','','','','','','','','','','Tài khoản','Mật khẩu','Đơn vị cung cấp',''];
+  var rows=[header1,header2];
+  for(var i=0;i<list.length;i++){var v=list[i];rows.push([i+1,v.donVi,v.maSoDKKD,v.diaChiDV,v.bienSo,v.soPhuhieu,v.loaiPH,v.taiTrong,v.chuSoHuu,v.diaChiChu,v.laiXe,v.diaChiLX,v.nienHan,v.taiKhoan,v.matKhau,v.dvCungCap,v.ghiChu])}
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:7},{wch:20},{wch:26},{wch:23},{wch:21},{wch:16},{wch:22},{wch:17},{wch:42},{wch:28},{wch:26},{wch:25},{wch:18},{wch:18},{wch:18},{wch:15},{wch:21}];
+  ws['!merges']=[
+    {s:{r:0,c:0},e:{r:1,c:0}},{s:{r:0,c:1},e:{r:1,c:1}},{s:{r:0,c:2},e:{r:1,c:2}},{s:{r:0,c:3},e:{r:1,c:3}},
+    {s:{r:0,c:4},e:{r:1,c:4}},{s:{r:0,c:5},e:{r:1,c:5}},{s:{r:0,c:6},e:{r:1,c:6}},{s:{r:0,c:7},e:{r:1,c:7}},
+    {s:{r:0,c:8},e:{r:1,c:8}},{s:{r:0,c:9},e:{r:1,c:9}},{s:{r:0,c:10},e:{r:1,c:10}},{s:{r:0,c:11},e:{r:1,c:11}},
+    {s:{r:0,c:12},e:{r:1,c:12}},{s:{r:0,c:13},e:{r:0,c:15}},{s:{r:0,c:16},e:{r:1,c:16}}
+  ];
+  return ws;
+}
+
+document.getElementById('btnExport').addEventListener('click',function(){
+  if(vehicles.length===0){showToast('Không có dữ liệu để xuất!','error');return}
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,buildOfficialSheet(vehicles),'Danh sách xe');
+  var sn=val('submitterName'),sp=val('submitterPhone'),se=val('submitterEmail');
+  if(sn||sp||se){
+    var wsSub=XLSX.utils.aoa_to_sheet([['THÔNG TIN NGƯỜI NỘP'],['Họ và tên:',sn],['Số điện thoại:',sp],['Email:',se],['Ngày xuất:',new Date().toLocaleDateString('vi-VN')]]);
+    wsSub['!cols']=[{wch:18},{wch:35}];
+    XLSX.utils.book_append_sheet(wb,wsSub,'Người nộp');
+  }
+  var dateStr=new Date().toISOString().slice(0,10);
+  var fn='Danh_sach_xe_'+(sn?sn.replace(/\s+/g,'_')+'_':'')+dateStr+'.xlsx';
+  XLSX.writeFile(wb,fn);
+  showToast('Đã xuất file "'+fn+'"');
+});
+
+document.getElementById('btnTemplate').addEventListener('click',function(){
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,buildOfficialSheet([]),'Danh sách xe');
+  XLSX.writeFile(wb,'Mau_danh_sach_xe_gui_co_quan.xlsx');
+  showToast('Đã tải file mẫu');
+});
+
+/* ===== Gửi danh sách (API) ===== */
+document.getElementById('btnSubmit').addEventListener('click',function(){
+  if(vehicles.length===0){showToast('Không có dữ liệu!','error');return}
+  if(!validateSubmitter())return;
+  saveSubmitter();
+  var sub={
+    id:Date.now().toString(36)+Math.random().toString(36).substr(2,5),
+    timestamp:new Date().toISOString(),
+    submitter:{hoTen:val('submitterName'),sdt:val('submitterPhone'),email:val('submitterEmail')},
+    vehicles:JSON.parse(JSON.stringify(vehicles)),
+    vehicleCount:vehicles.length
+  };
+  var btn=document.getElementById('btnSubmit');
+  btn.textContent='⏳ Đang gửi...';btn.disabled=true;
+  callApi({action:'submit',submission:sub})
+    .then(function(r){
+      btn.textContent='✅ Gửi danh sách';btn.disabled=false;
+      if(r&&r.status==='success'){vehicles=[];saveDraft();render();showToast('✅ Đã gửi '+sub.vehicleCount+' xe lên Google Sheets!')}
+      else{showToast('Lỗi: '+(r?r.message:'unknown'),'error')}
+    })
+    .catch(function(e){btn.textContent='✅ Gửi danh sách';btn.disabled=false;showToast('Lỗi kết nối: '+String(e),'error')});
+});
+
+/* ===== Tra cứu hồ sơ (API) ===== */
+document.getElementById('btnLookup').addEventListener('click',function(){
+  var ph=val('lkPhone'),em=val('lkEmail'),div=document.getElementById('lkResult');
+  if(!ph||!em){showToast('Nhập cả SĐT và Email!','error');return}
+  div.innerHTML='<p style="text-align:center;color:#666;padding:20px">⏳ Đang tìm...</p>';
+  callApi({action:'lookup',phone:ph,email:em})
+    .then(function(r){
+      if(!r||r.status!=='success'||!r.submissions||r.submissions.length===0){
+        div.innerHTML='<div style="text-align:center;padding:30px;color:#999"><span style="font-size:2rem;display:block;margin-bottom:8px">🔍</span><p>Không tìm thấy hồ sơ nào</p></div>';return;
+      }
+      var subs=r.submissions.sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp)});
+      var total=0;for(var i=0;i<subs.length;i++)total+=subs[i].vehicleCount;
+      var h='<div style="padding:12px 16px;background:#e8f5e9;border-radius:8px;margin-bottom:16px;font-size:.9rem">✅ Tìm thấy <strong>'+subs.length+'</strong> lượt nộp — <strong>'+total+'</strong> xe</div>';
+      for(var i=0;i<subs.length;i++){
+        var s=subs[i],tm=fmtT(s.timestamp);
+        h+='<div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:12px;overflow:hidden">';
+        h+='<div style="padding:12px 16px;background:#f0f4f8;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">';
+        h+='<strong style="color:#1a237e">🕐 '+tm+'</strong> <span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600">🚗 '+s.vehicleCount+' xe</span></div>';
+        h+='<div style="display:none;padding:12px 16px"><div class="table-wrapper" style="display:block"><table class="data-table"><thead><tr><th>STT</th><th>Biển số</th><th>Đơn vị</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe</th></tr></thead><tbody>';
+        for(var j=0;j<s.vehicles.length;j++){var v=s.vehicles[j];h+='<tr><td>'+(j+1)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.donVi)+'</td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td></tr>'}
+        h+='</tbody></table></div></div></div>';
+      }
+      div.innerHTML=h;
+    })
+    .catch(function(e){div.innerHTML='<p style="text-align:center;color:#c62828;padding:20px">Lỗi: '+String(e)+'</p>'});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tổng Hợp Danh Sách Xe - Quản Lý</title>
+  <style>
+  :root{--color-primary:#1565c0;--color-primary-dark:#0d47a1;--color-indigo:#1a237e;--color-success:#2e7d32;--color-danger:#c62828;--color-bg:#f0f2f5;--color-card:#fff;--color-border:#e0e0e0;--radius:12px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--color-bg);color:#1a1a2e;line-height:1.6}
+  .header{background:linear-gradient(135deg,#1a237e,#283593);color:#fff;padding:28px 24px;text-align:center}
+  .header h1{font-size:1.6rem;margin-bottom:4px}.header p{opacity:.85;font-size:.9rem}
+  .container{max-width:1200px;margin:0 auto;padding:20px 16px}
+  .btn{padding:10px 20px;border:none;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn-outline{background:#fff;color:var(--color-primary);border:1.5px solid var(--color-primary)}.btn-outline:hover{background:#e3f2fd}
+  .btn-success{background:var(--color-success);color:#fff}.btn-success:hover{background:#1b5e20}
+  .btn-danger{background:var(--color-danger);color:#fff}.btn-danger:hover{background:#b71c1c}
+  .btn-sm{padding:6px 14px;font-size:.82rem}
+  .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+  .toast{padding:12px 20px;border-radius:8px;color:#fff;font-size:.88rem;font-weight:500;transform:translateX(120%);transition:transform .3s;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:400px}
+  .toast.show{transform:translateX(0)}.toast.success{background:var(--color-success)}.toast.error{background:var(--color-danger)}.toast.info{background:#455a64}
+  .login{max-width:400px;margin:80px auto;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);padding:40px 36px;text-align:center}
+  .login h2{margin:12px 0 6px;color:var(--color-indigo);font-size:1.4rem}.login p{color:#888;font-size:.85rem;margin-bottom:24px}
+  .login input{width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:.95rem;box-sizing:border-box;margin-bottom:12px}
+  .login input:focus{border-color:var(--color-indigo);outline:none}
+  .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,#1a237e,#283593);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer}
+  .login-err{color:#d32f2f;font-size:.83rem;margin-bottom:12px;display:none}
+  .dash{display:none}.dash.active{display:block}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+  .scard{background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.08);text-align:center;border:1px solid var(--color-border)}
+  .scard .num{font-size:2.2rem;font-weight:700;color:var(--color-indigo);line-height:1.2}.scard .lbl{font-size:.85rem;color:#666;margin-top:4px}
+  .actions-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+  .sub-card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:16px;overflow:hidden;border:1px solid #e0e0e0}
+  .sub-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:#f5f7fa;cursor:pointer;gap:12px;flex-wrap:wrap}
+  .sub-hdr:hover{background:#eef1f6}
+  .sub-info{display:flex;gap:20px;align-items:center;flex-wrap:wrap;flex:1}
+  .sub-info .name{font-weight:600;color:var(--color-indigo);font-size:1rem}
+  .sub-info .meta{color:#666;font-size:.82rem}
+  .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600;white-space:nowrap}
+  .bg-green{background:#e8f5e9;color:#2e7d32}.bg-blue{background:#e3f2fd;color:#1565c0}
+  .sub-body{display:none;padding:0 20px 20px}.sub-body.open{display:block}
+  .sub-detail{display:flex;gap:24px;padding:12px 16px;background:#fafafa;border-radius:8px;margin-bottom:16px;flex-wrap:wrap;font-size:.88rem}
+  .table-wrapper{overflow-x:auto;border-radius:8px;border:1px solid var(--color-border)}
+  .data-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .data-table th{background:#f5f7fa;padding:10px 12px;text-align:left;font-weight:600;color:#444;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+  .data-table td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+  .data-table tr:hover{background:#f8f9ff}
+  .arrow{font-size:1.2rem;transition:transform .3s;flex-shrink:0}.arrow.open{transform:rotate(180deg)}
+  .del-btn{background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px;border-radius:6px;opacity:.6}.del-btn:hover{opacity:1;background:#ffebee}
+  .logout-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 16px;border-radius:6px;cursor:pointer;font-size:.82rem}
+  .pw-box{background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:20px;border:1px solid var(--color-border)}
+  .pw-box h3{margin:0 0 12px;font-size:1rem}
+  .pw-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .pw-row .fg{flex:1;min-width:180px;margin-bottom:16px}
+  .pw-row label{display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:6px}
+  .pw-row input{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box}
+  .search-box{position:relative}
+  .search-box input{padding:8px 12px 8px 32px;border:1.5px solid #ddd;border-radius:8px;font-size:.88rem;min-width:200px}
+  .search-box input:focus{border-color:var(--color-primary);outline:none}
+  .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%)}
+  @media(max-width:600px){.header h1{font-size:1.2rem}.cards{grid-template-columns:1fr}.search-box input{min-width:0;width:100%}}
+  </style>
+</head>
+<body>
+
+<div id="loginScreen" class="login">
+  <div style="font-size:3rem">🔐</div>
+  <h2>Đăng nhập Quản lý</h2>
+  <p>Nhập tài khoản và mật khẩu</p>
+  <form id="loginForm">
+    <input type="text" id="loginUser" placeholder="Tài khoản" autofocus>
+    <input type="password" id="loginPass" placeholder="Mật khẩu">
+    <div class="login-err" id="loginErr">Sai tài khoản hoặc mật khẩu!</div>
+    <button type="submit" class="login-btn">🔑 Đăng nhập</button>
+  </form>
+  <div style="margin-top:18px">
+    <a href="index.html" class="btn btn-outline btn-sm" style="text-decoration:none">← Về trang nhập liệu</a>
+  </div>
+</div>
+
+<div id="dash" class="dash">
+  <header class="header">
+    <h1>🔑 Tổng Hợp Danh Sách Xe</h1>
+    <p>Xem tất cả phương tiện đã nộp — Dữ liệu từ Google Sheets</p>
+    <div style="margin-top:10px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap">
+      <a href="index.html" style="color:#fff;opacity:.8;font-size:.85rem;text-decoration:underline">← Trang nhập liệu</a>
+      <button class="logout-btn" id="btnLogout">🚪 Đăng xuất</button>
+    </div>
+  </header>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="container">
+    <div class="cards">
+      <div class="scard"><div class="num" id="tSubs">0</div><div class="lbl">Lượt nộp</div></div>
+      <div class="scard"><div class="num" id="tVeh">0</div><div class="lbl">Tổng số xe</div></div>
+      <div class="scard"><div class="num" id="tPpl">0</div><div class="lbl">Đơn vị / cá nhân</div></div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-outline" id="btnRefresh">🔄 Làm mới</button>
+      <button class="btn btn-success" id="btnExportAll">📥 Xuất Excel tổng hợp</button>
+      <button class="btn btn-danger btn-sm" id="btnClearAll">🗑️ Xóa tất cả</button>
+      <div class="search-box" style="margin-left:auto"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Lọc theo tên, SĐT, email, biển số, đơn vị..."></div>
+    </div>
+
+    <div class="pw-box">
+      <h3>🔧 Đổi mật khẩu quản lý</h3>
+      <div class="pw-row">
+        <div class="fg"><label>Tài khoản mới</label><input type="text" id="newUser"></div>
+        <div class="fg"><label>Mật khẩu mới</label><input type="password" id="newPass"></div>
+        <button class="btn btn-outline" id="btnChgPw" style="height:42px;margin-bottom:16px">💾 Lưu</button>
+      </div>
+    </div>
+
+    <div id="subsList"></div>
+  </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+/* ===== CẤU HÌNH API — dán URL web app Apps Script của bạn vào đây ===== */
+var API_URL='https://script.google.com/macros/s/AKfycbxdv98ykDOkmrjnr_sd-RaKfi7Gx3114HEgh5yLzJ5TA0Jw1oR4vMDsIMnKHIXBnnZs/exec';
+function callApi(payload){
+  return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){return r.json()});
+}
+
+var submissions=[], filterTerm='', adminCred=null;
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function showToast(m,t){var c=document.getElementById('toastContainer');if(!c)return;var d=document.createElement('div');d.className='toast '+(t||'success');d.textContent=m;c.appendChild(d);setTimeout(function(){d.classList.add('show')},10);setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},3500)}
+function fmtT(iso){var d=new Date(iso);function p(n){return n<10?'0'+n:''+n}return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())}
+
+/* ===== Đăng nhập ===== */
+document.getElementById('loginForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  var u=document.getElementById('loginUser').value.trim(), p=document.getElementById('loginPass').value;
+  callApi({action:'verify',user:u,pass:p}).then(function(r){
+    if(r&&r.status==='success'&&r.ok){
+      adminCred={user:u,pass:p};
+      try{sessionStorage.setItem('admin_cred',JSON.stringify(adminCred))}catch(e){}
+      showDash();
+    }else{document.getElementById('loginErr').style.display='block'}
+  }).catch(function(){document.getElementById('loginErr').style.display='block'});
+});
+
+document.getElementById('btnLogout').addEventListener('click',function(){try{sessionStorage.removeItem('admin_cred')}catch(e){}location.reload()});
+document.getElementById('btnRefresh').addEventListener('click',loadData);
+document.getElementById('searchInput').addEventListener('input',function(){filterTerm=this.value.toLowerCase().trim();renderAll()});
+document.getElementById('btnClearAll').addEventListener('click',function(){
+  if(!confirm('Xóa TẤT CẢ dữ liệu? Không thể hoàn tác!'))return;
+  callApi({action:'deleteAll',user:adminCred.user,pass:adminCred.pass}).then(function(r){
+    if(r&&r.status==='success'){loadData();showToast('Đã xóa tất cả')}else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+});
+document.getElementById('btnChgPw').addEventListener('click',function(){
+  var u=document.getElementById('newUser').value.trim(), p=document.getElementById('newPass').value;
+  if(!u||!p){showToast('Nhập đủ tài khoản và mật khẩu!','error');return}
+  callApi({action:'setCred',user:adminCred.user,pass:adminCred.pass,newUser:u,newPass:p}).then(function(r){
+    if(r&&r.status==='success'){
+      adminCred={user:u,pass:p};
+      try{sessionStorage.setItem('admin_cred',JSON.stringify(adminCred))}catch(e){}
+      showToast('Đã đổi mật khẩu!');document.getElementById('newUser').value='';document.getElementById('newPass').value='';
+    }else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+});
+
+/* Khôi phục phiên đăng nhập */
+try{var sc=sessionStorage.getItem('admin_cred');if(sc){adminCred=JSON.parse(sc);showDash()}}catch(e){}
+function showDash(){document.getElementById('loginScreen').style.display='none';document.getElementById('dash').classList.add('active');loadData()}
+
+function loadData(){
+  if(!adminCred){return}
+  document.getElementById('subsList').innerHTML='<div style="text-align:center;padding:40px;color:#666"><p style="font-size:1.5rem">⏳</p><p>Đang tải từ Google Sheets...</p></div>';
+  callApi({action:'getAll',user:adminCred.user,pass:adminCred.pass}).then(function(r){
+    if(r&&r.status==='success'){submissions=r.submissions||[];renderAll()}
+    else{showToast('Lỗi: '+(r?r.message:''),'error');submissions=[];renderAll()}
+  }).catch(function(e){showToast('Lỗi tải: '+String(e),'error');submissions=[];renderAll()});
+}
+
+function matchFilter(s){
+  if(!filterTerm)return true;
+  var parts=[s.submitter.hoTen,s.submitter.sdt,s.submitter.email];
+  for(var j=0;j<s.vehicles.length;j++){var v=s.vehicles[j];parts.push(v.bienSo,v.donVi,v.soPhuhieu,v.loaiPH,v.chuSoHuu,v.laiXe)}
+  return parts.join(' ').toLowerCase().indexOf(filterTerm)>=0;
+}
+
+function renderAll(){
+  var ts=submissions.length,tv=0,emails={};
+  for(var i=0;i<submissions.length;i++){tv+=submissions[i].vehicleCount||0;emails[submissions[i].submitter.email||submissions[i].submitter.hoTen]=1}
+  document.getElementById('tSubs').textContent=ts;
+  document.getElementById('tVeh').textContent=tv;
+  document.getElementById('tPpl').textContent=Object.keys(emails).length;
+
+  var c=document.getElementById('subsList');
+  if(submissions.length===0){c.innerHTML='<div style="text-align:center;padding:60px 20px;color:#999"><span style="font-size:3rem;display:block;margin-bottom:12px">📭</span><p style="font-size:1.1rem;font-weight:500">Chưa có lượt nộp nào</p></div>';return}
+
+  var sorted=submissions.slice().sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp)}).filter(matchFilter);
+  if(sorted.length===0){c.innerHTML='<div style="text-align:center;padding:40px 20px;color:#999"><span style="font-size:2.5rem;display:block;margin-bottom:8px">🔍</span><p>Không có lượt nộp nào khớp "'+esc(filterTerm)+'"</p></div>';return}
+
+  var h='';
+  for(var i=0;i<sorted.length;i++){
+    var s=sorted[i],tm=fmtT(s.timestamp);
+    h+='<div class="sub-card"><div class="sub-hdr" onclick="togSub(this)"><div class="sub-info">';
+    h+='<span class="name">👤 '+esc(s.submitter.hoTen)+'</span>';
+    h+='<span class="meta">📞 '+esc(s.submitter.sdt)+'</span>';
+    h+='<span class="meta">📧 '+esc(s.submitter.email)+'</span></div>';
+    h+='<span class="badge bg-green">🚗 '+s.vehicleCount+' xe</span>';
+    h+='<span class="badge bg-blue">🕐 '+tm+'</span>';
+    h+='<button class="del-btn" onclick="event.stopPropagation();delSub(\''+s.id+'\')" title="Xóa">🗑️</button>';
+    h+='<span class="arrow">▼</span></div>';
+    h+='<div class="sub-body"><div class="sub-detail">';
+    h+='<span>👤 <strong>'+esc(s.submitter.hoTen)+'</strong></span>';
+    h+='<span>📞 <strong>'+esc(s.submitter.sdt)+'</strong></span>';
+    h+='<span>📧 <strong>'+esc(s.submitter.email)+'</strong></span>';
+    h+='<span>🕐 <strong>'+tm+'</strong></span></div>';
+    h+='<div class="table-wrapper" style="display:block"><table class="data-table"><thead><tr>';
+    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Biển số</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe</th><th>Lái xe</th><th>Niên hạn</th><th>TK GSHT</th></tr></thead><tbody>';
+    for(var j=0;j<s.vehicles.length;j++){
+      var v=s.vehicles[j];
+      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td></tr>';
+    }
+    h+='</tbody></table></div></div></div>';
+  }
+  c.innerHTML=h;
+}
+
+function togSub(el){var b=el.nextElementSibling,a=el.querySelector('.arrow');b.classList.toggle('open');a.classList.toggle('open')}
+function delSub(id){
+  if(!confirm('Xóa lượt nộp này?'))return;
+  callApi({action:'delete',id:id,user:adminCred.user,pass:adminCred.pass}).then(function(r){
+    if(r&&r.status==='success'){loadData();showToast('Đã xóa')}else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+}
+
+/* ===== Tạo worksheet đúng mẫu cơ quan ===== */
+function buildOfficialSheet(list){
+  var header1=['STT','Tên Đơn vị Kinh Doanh vận tải','Mã số Đăng ký kinh doanh đơn vị','Địa chỉ đơn vị Đăng ký KDVT','Biển số','Số Phù hiệu','Loại Phù Hiệu','Tải trọng Hàng Hóa (theo đăng ký xe)\n(Kg)','Tên chủ sở hữu (theo đăng ký xe)/ số điện thoại chủ xe','Địa chỉ chủ Phương tiện','Họ tên Lái xe/ Số điện thoại lái xe','Địa chỉ lái xe','Niên hạn \n sử dụng\n(nếu không niên hạn ghi số 0)','Thiết bị giám sát hành trình và \n thiết bị ghi nhận hình ảnh người lái xe','','','Ghi chú'];
+  var header2=['','','','','','','','','','','','','','Tài khoản','Mật khẩu','Đơn vị cung cấp',''];
+  var rows=[header1,header2];
+  for(var i=0;i<list.length;i++){var v=list[i];rows.push([i+1,v.donVi,v.maSoDKKD,v.diaChiDV,v.bienSo,v.soPhuhieu,v.loaiPH,v.taiTrong,v.chuSoHuu,v.diaChiChu,v.laiXe,v.diaChiLX,v.nienHan,v.taiKhoan,v.matKhau,v.dvCungCap,v.ghiChu])}
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:7},{wch:20},{wch:26},{wch:23},{wch:21},{wch:16},{wch:22},{wch:17},{wch:42},{wch:28},{wch:26},{wch:25},{wch:18},{wch:18},{wch:18},{wch:15},{wch:21}];
+  ws['!merges']=[
+    {s:{r:0,c:0},e:{r:1,c:0}},{s:{r:0,c:1},e:{r:1,c:1}},{s:{r:0,c:2},e:{r:1,c:2}},{s:{r:0,c:3},e:{r:1,c:3}},
+    {s:{r:0,c:4},e:{r:1,c:4}},{s:{r:0,c:5},e:{r:1,c:5}},{s:{r:0,c:6},e:{r:1,c:6}},{s:{r:0,c:7},e:{r:1,c:7}},
+    {s:{r:0,c:8},e:{r:1,c:8}},{s:{r:0,c:9},e:{r:1,c:9}},{s:{r:0,c:10},e:{r:1,c:10}},{s:{r:0,c:11},e:{r:1,c:11}},
+    {s:{r:0,c:12},e:{r:1,c:12}},{s:{r:0,c:13},e:{r:0,c:15}},{s:{r:0,c:16},e:{r:1,c:16}}
+  ];
+  return ws;
+}
+
+document.getElementById('btnExportAll').addEventListener('click',function(){
+  if(submissions.length===0){showToast('Chưa có dữ liệu để xuất!','error');return}
+  var subs=submissions.slice().sort(function(a,b){return new Date(a.timestamp)-new Date(b.timestamp)}).filter(matchFilter);
+  if(subs.length===0){showToast('Không có lượt nộp nào khớp bộ lọc!','error');return}
+  var allVehicles=[], logRows=[['STT','Người nộp','SĐT','Email','Số xe','Thời gian nộp']];
+  for(var i=0;i<subs.length;i++){
+    var s=subs[i];
+    logRows.push([i+1,s.submitter.hoTen,s.submitter.sdt,s.submitter.email,s.vehicleCount,fmtT(s.timestamp)]);
+    for(var j=0;j<s.vehicles.length;j++)allVehicles.push(s.vehicles[j]);
+  }
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,buildOfficialSheet(allVehicles),'Tổng hợp xe');
+  var wsLog=XLSX.utils.aoa_to_sheet(logRows);
+  wsLog['!cols']=[{wch:6},{wch:24},{wch:15},{wch:26},{wch:8},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,wsLog,'Theo lượt nộp');
+  var dateStr=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'Tong_hop_danh_sach_xe_'+dateStr+'.xlsx');
+  showToast('Đã xuất '+allVehicles.length+' xe ('+subs.length+' lượt nộp)');
+});
+</script>
+</body>
+</html>
