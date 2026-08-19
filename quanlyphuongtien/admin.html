@@ -73,7 +73,7 @@
     <div class="login-err" id="loginErr">Sai tài khoản hoặc mật khẩu!</div>
     <button type="submit" class="login-btn">🔑 Đăng nhập</button>
   </form>
-  <div style="margin-top:18px">
+  <div style="margin-top:16px">
     <a href="index.html" class="btn btn-outline btn-sm" style="text-decoration:none">← Về trang nhập liệu</a>
   </div>
 </div>
@@ -100,7 +100,8 @@
     <div class="actions-bar">
       <button class="btn btn-outline" id="btnRefresh">🔄 Làm mới</button>
       <button class="btn btn-success" id="btnExportAll">📥 Xuất Excel tổng hợp</button>
-      <button class="btn btn-danger btn-sm" id="btnClearAll">🗑️ Xóa tất cả</button>
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:#555;cursor:pointer;user-select:none"><input type="checkbox" id="chkAll" style="width:16px;height:16px;cursor:pointer"> Chọn tất cả</label>
+      <button class="btn btn-danger btn-sm" id="btnDeleteSelected">🗑️ Xóa mục đã chọn</button>
       <div class="search-box" style="margin-left:auto"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Lọc theo tên, SĐT, email, biển số, đơn vị..."></div>
     </div>
 
@@ -146,11 +147,17 @@ document.getElementById('loginForm').addEventListener('submit',function(e){
 document.getElementById('btnLogout').addEventListener('click',function(){try{sessionStorage.removeItem('admin_cred')}catch(e){}location.reload()});
 document.getElementById('btnRefresh').addEventListener('click',loadData);
 document.getElementById('searchInput').addEventListener('input',function(){filterTerm=this.value.toLowerCase().trim();renderAll()});
-document.getElementById('btnClearAll').addEventListener('click',function(){
-  if(!confirm('Xóa TẤT CẢ dữ liệu? Không thể hoàn tác!'))return;
-  callApi({action:'deleteAll',user:adminCred.user,pass:adminCred.pass}).then(function(r){
-    if(r&&r.status==='success'){loadData();showToast('Đã xóa tất cả')}else{showToast('Lỗi: '+(r?r.message:''),'error')}
-  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+document.getElementById('chkAll').addEventListener('change',function(){
+  var boxes=document.querySelectorAll('.sub-chk');
+  for(var i=0;i<boxes.length;i++)boxes[i].checked=this.checked;
+});
+document.getElementById('btnDeleteSelected').addEventListener('click',function(){
+  var boxes=document.querySelectorAll('.sub-chk:checked');
+  if(boxes.length===0){showToast('Chưa chọn lượt nộp nào để xóa!','error');return}
+  if(!confirm('Xóa '+boxes.length+' lượt nộp đã chọn? Không thể hoàn tác!'))return;
+  var ids=[];for(var i=0;i<boxes.length;i++)ids.push(boxes[i].getAttribute('data-id'));
+  var proms=ids.map(function(id){return callApi({action:'delete',id:id,user:adminCred.user,pass:adminCred.pass})});
+  Promise.all(proms).then(function(){loadData();showToast('Đã xóa '+ids.length+' lượt nộp')}).catch(function(e){loadData();showToast('Lỗi: '+String(e),'error')});
 });
 document.getElementById('btnChgPw').addEventListener('click',function(){
   var u=document.getElementById('newUser').value.trim(), p=document.getElementById('newPass').value;
@@ -185,6 +192,7 @@ function matchFilter(s){
 }
 
 function renderAll(){
+  var ca=document.getElementById('chkAll');if(ca)ca.checked=false;
   var ts=submissions.length,tv=0,emails={};
   for(var i=0;i<submissions.length;i++){tv+=submissions[i].vehicleCount||0;emails[submissions[i].submitter.email||submissions[i].submitter.hoTen]=1}
   document.getElementById('tSubs').textContent=ts;
@@ -200,7 +208,9 @@ function renderAll(){
   var h='';
   for(var i=0;i<sorted.length;i++){
     var s=sorted[i],tm=fmtT(s.timestamp);
-    h+='<div class="sub-card"><div class="sub-hdr" onclick="togSub(this)"><div class="sub-info">';
+    h+='<div class="sub-card"><div class="sub-hdr" onclick="togSub(this)">';
+    h+='<input type="checkbox" class="sub-chk" data-id="'+esc(s.id)+'" onclick="event.stopPropagation()" style="width:18px;height:18px;flex-shrink:0;cursor:pointer">';
+    h+='<div class="sub-info">';
     h+='<span class="name">👤 '+esc(s.submitter.hoTen)+'</span>';
     h+='<span class="meta">📞 '+esc(s.submitter.sdt)+'</span>';
     h+='<span class="meta">📧 '+esc(s.submitter.email)+'</span></div>';
