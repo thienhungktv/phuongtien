@@ -142,6 +142,15 @@
       <div id="subList" style="font-size:.88rem"></div>
     </div>
 
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+      <span style="font-size:.82rem;color:var(--muted)">↔ Kéo ngang trong bảng để xem hết các cột</span>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:5px 8px;box-shadow:var(--shadow)">
+        <span style="font-size:.8rem;color:var(--muted)">Cỡ hiển thị:</span>
+        <button class="btn btn-outline btn-sm" id="btnZoomOut" title="Thu nhỏ" style="padding:4px 10px">🔍−</button>
+        <span id="zoomLbl" style="font-size:.82rem;font-weight:700;min-width:44px;text-align:center">100%</span>
+        <button class="btn btn-outline btn-sm" id="btnZoomIn" title="Phóng to" style="padding:4px 10px">🔍+</button>
+      </div>
+    </div>
     <div id="subsList"></div>
   </div>
 </div>
@@ -188,6 +197,13 @@ document.getElementById('loginForm').addEventListener('submit',function(e){
 document.getElementById('btnLogout').addEventListener('click',function(){try{sessionStorage.removeItem('admin_cred')}catch(e){}location.reload()});
 document.getElementById('btnRefresh').addEventListener('click',loadData);
 document.getElementById('searchInput').addEventListener('input',function(){filterTerm=this.value.toLowerCase().trim();renderAll()});
+/* Phóng to / thu nhỏ danh sách hồ sơ */
+var listZoom=1;
+function applyZoom(){var el=document.getElementById('subsList');if(el)el.style.zoom=listZoom;var lb=document.getElementById('zoomLbl');if(lb)lb.textContent=Math.round(listZoom*100)+'%';try{localStorage.setItem('admin_zoom',listZoom)}catch(e){}}
+try{var z=parseFloat(localStorage.getItem('admin_zoom'));if(z>=0.5&&z<=2)listZoom=z}catch(e){}
+document.getElementById('btnZoomIn').addEventListener('click',function(){listZoom=Math.min(2,Math.round((listZoom+0.1)*10)/10);applyZoom()});
+document.getElementById('btnZoomOut').addEventListener('click',function(){listZoom=Math.max(0.5,Math.round((listZoom-0.1)*10)/10);applyZoom()});
+applyZoom();
 document.getElementById('chkAll').addEventListener('change',function(){
   var boxes=document.querySelectorAll('.sub-chk');
   for(var i=0;i<boxes.length;i++)boxes[i].checked=this.checked;
@@ -301,11 +317,11 @@ function renderAll(){
     h+='<span>📞 <strong>'+esc(s.submitter.sdt)+'</strong></span>';
     h+='<span>📧 <strong>'+esc(s.submitter.email)+'</strong></span>';
     h+='<span>🕐 <strong>'+tm+'</strong></span></div>';
-    h+='<div class="table-wrapper" style="display:block"><table class="data-table"><thead><tr>';
-    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Biển số</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe</th><th>Lái xe</th><th>Niên hạn</th><th>TK GSHT</th>'+(isAdmin?'<th>Thao tác</th>':'')+'</tr></thead><tbody>';
+    h+='<div class="table-wrapper" style="display:block"><table class="data-table" style="white-space:nowrap"><thead><tr>';
+    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Địa chỉ ĐV</th><th>Biển số</th><th>Số PH</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe / SĐT</th><th>ĐC chủ xe</th><th>Lái xe / SĐT</th><th>ĐC lái xe</th><th>Niên hạn</th><th>TK GSHT</th><th>MK GSHT</th><th>Đường dẫn ĐN</th><th>Ghi chú</th>'+(isAdmin?'<th>Thao tác</th>':'')+'</tr></thead><tbody>';
     for(var j=0;j<s.vehicles.length;j++){
       var v=s.vehicles[j];
-      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td>'+(isAdmin?('<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditVehicle(\''+s.id+'\','+j+')" title="Sửa xe">✏️</button> <button class="btn btn-danger btn-sm" onclick="delVehicle(\''+s.id+'\','+j+')" title="Xóa xe này">🗑️</button></td>'):'')+'</tr>';
+      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td>'+esc(v.diaChiDV)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.soPhuhieu)+'</td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.diaChiChu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.diaChiLX)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td><td>'+esc(v.matKhau)+'</td><td>'+esc(v.dvCungCap)+'</td><td>'+esc(v.ghiChu)+'</td>'+(isAdmin?('<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditVehicle(\''+s.id+'\','+j+')" title="Sửa xe">✏️</button> <button class="btn btn-danger btn-sm" onclick="delVehicle(\''+s.id+'\','+j+')" title="Xóa xe này">🗑️</button></td>'):'')+'</tr>';
     }
     h+='</tbody></table></div></div></div>';
   }
