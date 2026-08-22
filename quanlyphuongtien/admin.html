@@ -133,6 +133,19 @@
   </div>
 </div>
 
+<!-- Modal sửa thông tin xe (chỉ admin) -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;overflow:auto;padding:20px">
+  <div style="max-width:920px;margin:20px auto;background:#fff;border-radius:14px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+    <h3 style="margin-bottom:4px;color:#1a237e">✏️ Sửa thông tin xe</h3>
+    <p id="editSubInfo" style="font-size:.82rem;color:#888;margin-bottom:16px"></p>
+    <div class="form-grid" id="editGrid"></div>
+    <div style="display:flex;gap:10px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-outline" id="btnEditCancel">✕ Hủy</button>
+      <button class="btn btn-success" id="btnEditSave">💾 Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 /* ===== CẤU HÌNH API — dán URL web app Apps Script của bạn vào đây ===== */
@@ -276,10 +289,10 @@ function renderAll(){
     h+='<span>📧 <strong>'+esc(s.submitter.email)+'</strong></span>';
     h+='<span>🕐 <strong>'+tm+'</strong></span></div>';
     h+='<div class="table-wrapper" style="display:block"><table class="data-table"><thead><tr>';
-    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Biển số</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe</th><th>Lái xe</th><th>Niên hạn</th><th>TK GSHT</th></tr></thead><tbody>';
+    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Biển số</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe</th><th>Lái xe</th><th>Niên hạn</th><th>TK GSHT</th>'+(isAdmin?'<th>Thao tác</th>':'')+'</tr></thead><tbody>';
     for(var j=0;j<s.vehicles.length;j++){
       var v=s.vehicles[j];
-      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td></tr>';
+      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td>'+(isAdmin?('<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditVehicle(\''+s.id+'\','+j+')" title="Sửa xe">✏️</button> <button class="btn btn-danger btn-sm" onclick="delVehicle(\''+s.id+'\','+j+')" title="Xóa xe này">🗑️</button></td>'):'')+'</tr>';
     }
     h+='</tbody></table></div></div></div>';
   }
@@ -291,6 +304,64 @@ function delSub(id){
   if(!confirm('Xóa lượt nộp này?'))return;
   callApi({action:'delete',id:id,user:adminCred.user,pass:adminCred.pass}).then(function(r){
     if(r&&r.status==='success'){loadData();showToast('Đã xóa')}else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+}
+
+/* ===== ADMIN sửa / xóa từng xe trong hồ sơ ===== */
+var VKEYS=[['donVi','Tên Đơn vị KDVT'],['maSoDKKD','Mã ĐKKD'],['diaChiDV','Địa chỉ đơn vị'],['bienSo','Biển số'],['soPhuhieu','Số Phù hiệu'],['loaiPH','Loại Phù Hiệu'],['taiTrong','Tải trọng / Số ghế'],['chuSoHuu','Chủ sở hữu / SĐT'],['diaChiChu','Địa chỉ chủ xe'],['laiXe','Lái xe / SĐT'],['diaChiLX','Địa chỉ lái xe'],['nienHan','Niên hạn'],['taiKhoan','Tài khoản GSHT'],['matKhau','Mật khẩu GSHT'],['dvCungCap','Đường dẫn đăng nhập'],['ghiChu','Ghi chú']];
+var editingSubId=null, editingVehIdx=-1;
+function findSub(id){for(var i=0;i<submissions.length;i++)if(String(submissions[i].id)===String(id))return submissions[i];return null}
+function attrEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+
+function openEditVehicle(subId, vehIdx){
+  var s=findSub(subId); if(!s||!s.vehicles[vehIdx])return;
+  var v=s.vehicles[vehIdx];
+  editingSubId=subId; editingVehIdx=vehIdx;
+  document.getElementById('editSubInfo').textContent='Hồ sơ: '+(s.submitter.hoTen||'')+' • Xe #'+(vehIdx+1)+' • Biển số: '+(v.bienSo||'');
+  var g=document.getElementById('editGrid'), h='';
+  for(var i=0;i<VKEYS.length;i++){
+    var k=VKEYS[i][0], lbl=VKEYS[i][1];
+    if(k==='loaiPH'){
+      var opts=['Xe chạy tuyến cố định','Xe Buýt','Xe Hợp đồng','Xe Tải','Xe Taxi','Xe Trung chuyển'];
+      var o='';for(var m=0;m<opts.length;m++)o+='<option value="'+attrEsc(opts[m])+'"'+(v[k]===opts[m]?' selected':'')+'>'+esc(opts[m])+'</option>';
+      h+='<div class="form-group"><label>'+lbl+'</label><select id="ev_'+k+'"><option value="">-- Chọn loại --</option>'+o+'</select></div>';
+    }else{
+      h+='<div class="form-group"><label>'+lbl+'</label><input type="text" id="ev_'+k+'" value="'+attrEsc(v[k])+'"></div>';
+    }
+  }
+  g.innerHTML=h;
+  document.getElementById('editModal').style.display='block';
+}
+document.getElementById('btnEditCancel').addEventListener('click',function(){document.getElementById('editModal').style.display='none'});
+document.getElementById('btnEditSave').addEventListener('click',function(){
+  var s=findSub(editingSubId); if(!s)return;
+  var v={};
+  for(var i=0;i<VKEYS.length;i++){var el=document.getElementById('ev_'+VKEYS[i][0]);v[VKEYS[i][0]]=el?el.value.trim():''}
+  if(!v.bienSo){showToast('Biển số không được để trống!','error');return}
+  var newList=s.vehicles.slice(); newList[editingVehIdx]=v;
+  var btn=document.getElementById('btnEditSave');btn.disabled=true;btn.textContent='⏳ Đang lưu...';
+  callApi({action:'updateVehicles',id:editingSubId,vehicles:newList,user:adminCred.user,pass:adminCred.pass}).then(function(r){
+    btn.disabled=false;btn.textContent='💾 Lưu thay đổi';
+    if(r&&r.status==='success'){document.getElementById('editModal').style.display='none';showToast('Đã lưu thay đổi xe');loadData()}
+    else{showToast('Lỗi: '+(r?r.message:''),'error')}
+  }).catch(function(e){btn.disabled=false;btn.textContent='💾 Lưu thay đổi';showToast('Lỗi: '+String(e),'error')});
+});
+
+function delVehicle(subId, vehIdx){
+  var s=findSub(subId); if(!s||!s.vehicles[vehIdx])return;
+  var v=s.vehicles[vehIdx];
+  var isLast=s.vehicles.length<=1;
+  if(isLast){
+    if(!confirm('Đây là xe DUY NHẤT trong hồ sơ. Xóa xe này sẽ xóa luôn cả hồ sơ. Tiếp tục?'))return;
+    callApi({action:'delete',id:subId,user:adminCred.user,pass:adminCred.pass}).then(function(r){
+      if(r&&r.status==='success'){showToast('Đã xóa xe (và hồ sơ)');loadData()}else{showToast('Lỗi: '+(r?r.message:''),'error')}
+    }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
+    return;
+  }
+  if(!confirm('Xóa xe "'+(v.bienSo||'(trống)')+'" khỏi hồ sơ của '+(s.submitter.hoTen||'')+'?'))return;
+  var newList=s.vehicles.slice(); newList.splice(vehIdx,1);
+  callApi({action:'updateVehicles',id:subId,vehicles:newList,user:adminCred.user,pass:adminCred.pass}).then(function(r){
+    if(r&&r.status==='success'){showToast('Đã xóa xe');loadData()}else{showToast('Lỗi: '+(r?r.message:''),'error')}
   }).catch(function(e){showToast('Lỗi: '+String(e),'error')});
 }
 
