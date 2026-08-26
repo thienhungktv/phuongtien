@@ -280,7 +280,7 @@ function loadData(){
 function matchFilter(s){
   if(!filterTerm)return true;
   var parts=[s.submitter.hoTen,s.submitter.sdt,s.submitter.email];
-  for(var j=0;j<s.vehicles.length;j++){var v=s.vehicles[j];parts.push(v.bienSo,v.donVi,v.soPhuhieu,v.loaiPH,v.chuSoHuu,v.laiXe)}
+  for(var j=0;j<s.vehicles.length;j++){var v=s.vehicles[j];parts.push(v.bienSo,v.donVi,v.soPhuhieu,v.ngayCapPH,v.loaiPH,v.chuSoHuu,v.laiXe)}
   return parts.join(' ').toLowerCase().indexOf(filterTerm)>=0;
 }
 
@@ -318,10 +318,10 @@ function renderAll(){
     h+='<span>📧 <strong>'+esc(s.submitter.email)+'</strong></span>';
     h+='<span>🕐 <strong>'+tm+'</strong></span></div>';
     h+='<div class="table-wrapper" style="display:block"><table class="data-table" style="white-space:nowrap"><thead><tr>';
-    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Địa chỉ ĐV</th><th>Biển số</th><th>Số PH</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe / SĐT</th><th>ĐC chủ xe</th><th>Lái xe / SĐT</th><th>ĐC lái xe</th><th>Niên hạn</th><th>TK GSHT</th><th>MK GSHT</th><th>Đường dẫn ĐN</th><th>Ghi chú</th>'+(isAdmin?'<th>Thao tác</th>':'')+'</tr></thead><tbody>';
+    h+='<th>STT</th><th>Đơn vị</th><th>Mã ĐKKD</th><th>Địa chỉ ĐV</th><th>Biển số</th><th>Số PH</th><th>Ngày cấp PH</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe / SĐT</th><th>ĐC chủ xe</th><th>Lái xe / SĐT</th><th>ĐC lái xe</th><th>Niên hạn</th><th>TK GSHT</th><th>MK GSHT</th><th>Đường dẫn ĐN</th><th>Ghi chú</th>'+(isAdmin?'<th>Thao tác</th>':'')+'</tr></thead><tbody>';
     for(var j=0;j<s.vehicles.length;j++){
       var v=s.vehicles[j];
-      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td>'+esc(v.diaChiDV)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.soPhuhieu)+'</td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.diaChiChu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.diaChiLX)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td><td>'+esc(v.matKhau)+'</td><td>'+esc(v.dvCungCap)+'</td><td>'+esc(v.ghiChu)+'</td>'+(isAdmin?('<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditVehicle(\''+s.id+'\','+j+')" title="Sửa xe">✏️</button> <button class="btn btn-danger btn-sm" onclick="delVehicle(\''+s.id+'\','+j+')" title="Xóa xe này">🗑️</button></td>'):'')+'</tr>';
+      h+='<tr><td>'+(j+1)+'</td><td>'+esc(v.donVi)+'</td><td>'+esc(v.maSoDKKD)+'</td><td>'+esc(v.diaChiDV)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.soPhuhieu)+'</td><td>'+esc(v.ngayCapPH)+'</td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td><td>'+esc(v.diaChiChu)+'</td><td>'+esc(v.laiXe)+'</td><td>'+esc(v.diaChiLX)+'</td><td>'+esc(v.nienHan)+'</td><td>'+esc(v.taiKhoan)+'</td><td>'+esc(v.matKhau)+'</td><td>'+esc(v.dvCungCap)+'</td><td>'+esc(v.ghiChu)+'</td>'+(isAdmin?('<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openEditVehicle(\''+s.id+'\','+j+')" title="Sửa xe">✏️</button> <button class="btn btn-danger btn-sm" onclick="delVehicle(\''+s.id+'\','+j+')" title="Xóa xe này">🗑️</button></td>'):'')+'</tr>';
     }
     h+='</tbody></table></div></div></div>';
   }
@@ -337,7 +337,7 @@ function delSub(id){
 }
 
 /* ===== ADMIN sửa / xóa từng xe trong hồ sơ ===== */
-var VKEYS=[['donVi','Tên Đơn vị KDVT'],['maSoDKKD','Mã ĐKKD'],['diaChiDV','Địa chỉ đơn vị'],['bienSo','Biển số'],['soPhuhieu','Số Phù hiệu'],['loaiPH','Loại Phù Hiệu'],['taiTrong','Tải trọng / Số ghế'],['chuSoHuu','Chủ sở hữu / SĐT'],['diaChiChu','Địa chỉ chủ xe'],['laiXe','Lái xe / SĐT'],['diaChiLX','Địa chỉ lái xe'],['nienHan','Niên hạn'],['taiKhoan','Tài khoản GSHT'],['matKhau','Mật khẩu GSHT'],['dvCungCap','Đường dẫn đăng nhập'],['ghiChu','Ghi chú']];
+var VKEYS=[['donVi','Tên Đơn vị KDVT'],['maSoDKKD','Mã ĐKKD'],['diaChiDV','Địa chỉ đơn vị'],['bienSo','Biển số'],['soPhuhieu','Số Phù hiệu'],['ngayCapPH','Ngày cấp phù hiệu'],['loaiPH','Loại Phù Hiệu'],['taiTrong','Tải trọng / Số ghế'],['chuSoHuu','Chủ sở hữu / SĐT'],['diaChiChu','Địa chỉ chủ xe'],['laiXe','Lái xe / SĐT'],['diaChiLX','Địa chỉ lái xe'],['nienHan','Niên hạn'],['taiKhoan','Tài khoản GSHT'],['matKhau','Mật khẩu GSHT'],['dvCungCap','Đường dẫn đăng nhập'],['ghiChu','Ghi chú']];
 var editingSubId=null, editingVehIdx=-1;
 function findSub(id){for(var i=0;i<submissions.length;i++)if(String(submissions[i].id)===String(id))return submissions[i];return null}
 function attrEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
@@ -396,17 +396,17 @@ function delVehicle(subId, vehIdx){
 
 /* ===== Tạo worksheet đúng mẫu cơ quan ===== */
 function buildOfficialSheet(list){
-  var header1=['STT','Tên Đơn vị Kinh Doanh vận tải','Mã số Đăng ký kinh doanh đơn vị','Địa chỉ đơn vị Đăng ký KDVT','Biển số','Số Phù hiệu','Loại Phù Hiệu','Tải trọng Hàng Hóa (theo đăng ký xe)\n(Kg)','Tên chủ sở hữu (theo đăng ký xe)/ số điện thoại chủ xe','Địa chỉ chủ Phương tiện','Họ tên Lái xe/ Số điện thoại lái xe','Địa chỉ lái xe','Niên hạn \n sử dụng\n(nếu không niên hạn ghi số 0)','Thiết bị giám sát hành trình và \n thiết bị ghi nhận hình ảnh người lái xe','','','Ghi chú'];
-  var header2=['','','','','','','','','','','','','','Tài khoản','Mật khẩu','Đơn vị cung cấp',''];
+  var header1=['STT','Tên Đơn vị Kinh Doanh vận tải','Mã số Đăng ký kinh doanh đơn vị','Địa chỉ đơn vị Đăng ký KDVT','Biển số','Số Phù hiệu','Ngày cấp PH','Loại Phù Hiệu','Tải trọng Hàng Hóa (theo đăng ký xe)\n(Kg)','Tên chủ sở hữu (theo đăng ký xe)/ số điện thoại chủ xe','Địa chỉ chủ Phương tiện','Họ tên Lái xe/ Số điện thoại lái xe','Địa chỉ lái xe','Niên hạn \n sử dụng\n(nếu không niên hạn ghi số 0)','Thiết bị giám sát hành trình và \n thiết bị ghi nhận hình ảnh người lái xe','','','Ghi chú'];
+  var header2=['','','','','','','','','','','','','','','Tài khoản','Mật khẩu','Đơn vị cung cấp',''];
   var rows=[header1,header2];
-  for(var i=0;i<list.length;i++){var v=list[i];rows.push([i+1,v.donVi,v.maSoDKKD,v.diaChiDV,v.bienSo,v.soPhuhieu,v.loaiPH,v.taiTrong,v.chuSoHuu,v.diaChiChu,v.laiXe,v.diaChiLX,v.nienHan,v.taiKhoan,v.matKhau,v.dvCungCap,v.ghiChu])}
+  for(var i=0;i<list.length;i++){var v=list[i];rows.push([i+1,v.donVi,v.maSoDKKD,v.diaChiDV,v.bienSo,v.soPhuhieu,v.ngayCapPH,v.loaiPH,v.taiTrong,v.chuSoHuu,v.diaChiChu,v.laiXe,v.diaChiLX,v.nienHan,v.taiKhoan,v.matKhau,v.dvCungCap,v.ghiChu])}
   var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:7},{wch:20},{wch:26},{wch:23},{wch:21},{wch:16},{wch:22},{wch:17},{wch:42},{wch:28},{wch:26},{wch:25},{wch:18},{wch:18},{wch:18},{wch:15},{wch:21}];
+  ws['!cols']=[{wch:7},{wch:20},{wch:26},{wch:23},{wch:21},{wch:16},{wch:14},{wch:22},{wch:17},{wch:42},{wch:28},{wch:26},{wch:25},{wch:18},{wch:18},{wch:18},{wch:15},{wch:21}];
   ws['!merges']=[
     {s:{r:0,c:0},e:{r:1,c:0}},{s:{r:0,c:1},e:{r:1,c:1}},{s:{r:0,c:2},e:{r:1,c:2}},{s:{r:0,c:3},e:{r:1,c:3}},
     {s:{r:0,c:4},e:{r:1,c:4}},{s:{r:0,c:5},e:{r:1,c:5}},{s:{r:0,c:6},e:{r:1,c:6}},{s:{r:0,c:7},e:{r:1,c:7}},
     {s:{r:0,c:8},e:{r:1,c:8}},{s:{r:0,c:9},e:{r:1,c:9}},{s:{r:0,c:10},e:{r:1,c:10}},{s:{r:0,c:11},e:{r:1,c:11}},
-    {s:{r:0,c:12},e:{r:1,c:12}},{s:{r:0,c:13},e:{r:0,c:15}},{s:{r:0,c:16},e:{r:1,c:16}}
+    {s:{r:0,c:12},e:{r:1,c:12}},{s:{r:0,c:13},e:{r:1,c:13}},{s:{r:0,c:14},e:{r:0,c:16}},{s:{r:0,c:17},e:{r:1,c:17}}
   ];
   return ws;
 }
