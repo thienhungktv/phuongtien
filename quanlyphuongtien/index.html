@@ -93,6 +93,16 @@
       </div>
     </div>
 
+    <div class="card" id="editBanner" style="display:none;background:linear-gradient(135deg,#fff3e0,#fff);border:1px solid #ffcc80">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <strong style="color:#e65100">✏️ Đang sửa hồ sơ đã nộp</strong>
+          <div id="editBannerInfo" style="color:#666;font-size:.85rem;margin-top:2px"></div>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" id="btnCancelEdit">✕ Thoát sửa hồ sơ</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title" id="formTitle"><span class="icon">📝</span> Thêm xe mới</div>
       <form id="vehicleForm">
@@ -173,14 +183,14 @@
     </div>
 
     <div class="card" id="submitCard" style="display:none;text-align:center;background:linear-gradient(135deg,#e8f5e9,#fff)">
-      <div class="card-title" style="justify-content:center"><span class="icon">📨</span> Gửi danh sách xe</div>
-      <p style="color:#666;margin-bottom:16px">Sau khi kiểm tra danh sách, nhấn để gửi lên bộ phận tổng hợp</p>
+      <div class="card-title" id="submitCardTitle" style="justify-content:center"><span class="icon">📨</span> Gửi danh sách xe</div>
+      <p id="submitCardSub" style="color:#666;margin-bottom:16px">Sau khi kiểm tra danh sách, nhấn để gửi lên bộ phận tổng hợp</p>
       <button class="btn btn-success" id="btnSubmit" style="padding:14px 40px;font-size:1rem">✅ Gửi danh sách</button>
     </div>
 
     <div class="card">
-      <div class="card-title"><span class="icon">📋</span> Xem hồ sơ đã nộp</div>
-      <p style="color:#666;margin-bottom:16px;font-size:.88rem">Nhập đúng SĐT và Email đã dùng khi nộp để xem lại hồ sơ của bạn</p>
+      <div class="card-title"><span class="icon">📋</span> Xem / Sửa hồ sơ đã nộp</div>
+      <p style="color:#666;margin-bottom:16px;font-size:.88rem">Nhập đúng SĐT và Email đã dùng khi nộp để xem lại — và <strong>sửa / thêm xe</strong> vào hồ sơ của bạn</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
         <div class="form-group" style="flex:1;min-width:180px"><label>Số điện thoại</label><input type="tel" id="lkPhone" placeholder="SĐT đã nộp"></div>
         <div class="form-group" style="flex:1;min-width:180px"><label>Email</label><input type="email" id="lkEmail" placeholder="Email đã nộp"></div>
@@ -205,6 +215,10 @@ var REQ=KEYS.filter(function(k){return k!=='ghiChu'});
 var LABELS={donVi:'Đơn vị',maSoDKKD:'Mã ĐKKD',diaChiDV:'Địa chỉ ĐV',bienSo:'Biển số',soPhuhieu:'Số PH',ngayCapPH:'Ngày cấp PH',loaiPH:'Loại PH',taiTrong:'Tải trọng/Ghế',chuSoHuu:'Chủ xe',diaChiChu:'ĐC chủ xe',laiXe:'Lái xe',diaChiLX:'ĐC lái xe',nienHan:'Niên hạn',taiKhoan:'TK GSHT',matKhau:'MK GSHT',dvCungCap:'Đường dẫn ĐN',ghiChu:'Ghi chú'};
 var DRAFT_KEY='vehicle_list_draft', SUBMITTER_KEY='vehicle_list_submitter';
 var vehicles=[], editIdx=-1;
+/* Chế độ đơn vị sửa hồ sơ đã nộp */
+var editingSubId=null, editingSubmitterAuth={phone:'',email:''}, preEditDraft=null, lkSubs=[];
+function normPlate(s){return String(s==null?'':s).replace(/[^a-zA-Z0-9]/g,'').toUpperCase();}
+function findDupPlates(list){var seen={},dup={};for(var i=0;i<list.length;i++){var p=normPlate(list[i].bienSo);if(!p)continue;if(seen[p])dup[p]=true;seen[p]=true}return Object.keys(dup);}
 
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function showToast(m,t){var c=document.getElementById('toastContainer');var d=document.createElement('div');d.className='toast '+(t||'success');d.textContent=m;c.appendChild(d);setTimeout(function(){d.classList.add('show')},10);setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},3500)}
@@ -214,9 +228,9 @@ function fmtT(iso){var d=new Date(iso);function p(n){return n<10?'0'+n:''+n}retu
 function val(id){var el=document.getElementById(id);return el?el.value.trim():''}
 function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v||''}
 
-function saveDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(vehicles))}catch(e){}}
+function saveDraft(){if(editingSubId)return;try{localStorage.setItem(DRAFT_KEY,JSON.stringify(vehicles))}catch(e){}}
 function loadDraft(){try{var d=localStorage.getItem(DRAFT_KEY);if(d)vehicles=JSON.parse(d)||[]}catch(e){vehicles=[]}}
-function saveSubmitter(){try{localStorage.setItem(SUBMITTER_KEY,JSON.stringify({hoTen:val('submitterName'),sdt:val('submitterPhone'),email:val('submitterEmail')}))}catch(e){}}
+function saveSubmitter(){if(editingSubId)return;try{localStorage.setItem(SUBMITTER_KEY,JSON.stringify({hoTen:val('submitterName'),sdt:val('submitterPhone'),email:val('submitterEmail')}))}catch(e){}}
 function loadSubmitter(){try{var d=localStorage.getItem(SUBMITTER_KEY);if(d){var i=JSON.parse(d);setVal('submitterName',i.hoTen);setVal('submitterPhone',i.sdt);setVal('submitterEmail',i.email)}}catch(e){}}
 
 function validateSubmitter(){
@@ -247,6 +261,12 @@ document.getElementById('vehicleForm').addEventListener('submit',function(e){
   for(var i=0;i<KEYS.length;i++){data[KEYS[i]]=gv(KEYS[i])}
   for(var i=0;i<REQ.length;i++){
     if(!data[REQ[i]]){showToast('Nhập "'+LABELS[REQ[i]]+'"!','error');var el=document.getElementById('f_'+REQ[i]);if(el)el.focus();return}
+  }
+  // Chặn trùng biển số trong chính danh sách đang nhập
+  var _np=normPlate(data.bienSo);
+  for(var di=0;di<vehicles.length;di++){
+    if(di===editIdx)continue;
+    if(normPlate(vehicles[di].bienSo)===_np){showToast('⚠️ Biển số '+data.bienSo+' đã có trong danh sách!','error');var _eb=document.getElementById('f_bienSo');if(_eb)_eb.focus();return}
   }
   saveSubmitter();
   if(editIdx>=0){vehicles[editIdx]=data;showToast('Đã cập nhật xe '+data.bienSo);editIdx=-1}
@@ -357,6 +377,8 @@ function processExcel(file){
       saveDraft();render();
       if(imported>0)showToast('Đã nhập '+imported+' xe từ "'+file.name+'"');
       else showToast('Không tìm thấy dữ liệu xe trong file (bắt đầu từ dòng 3)','error');
+      var _dup=findDupPlates(vehicles);
+      if(_dup.length)showToast('⚠️ Có biển số TRÙNG trong danh sách: '+_dup.join(', '),'error');
     }catch(err){showToast('Lỗi đọc file Excel: '+err.message,'error')}
   };
   reader.readAsArrayBuffer(file);
@@ -407,27 +429,96 @@ document.getElementById('btnTemplate').addEventListener('click',function(){
   showToast('Đã tải file mẫu');
 });
 
-/* ===== Gửi danh sách (API) ===== */
+/* ===== Gửi danh sách / Cập nhật hồ sơ (API) ===== */
 document.getElementById('btnSubmit').addEventListener('click',function(){
   if(vehicles.length===0){showToast('Không có dữ liệu!','error');return}
-  if(!validateSubmitter())return;
-  saveSubmitter();
-  var sub={
-    id:Date.now().toString(36)+Math.random().toString(36).substr(2,5),
-    timestamp:new Date().toISOString(),
-    submitter:{hoTen:val('submitterName'),sdt:val('submitterPhone'),email:val('submitterEmail')},
-    vehicles:JSON.parse(JSON.stringify(vehicles)),
-    vehicleCount:vehicles.length
-  };
-  var btn=document.getElementById('btnSubmit');
-  btn.textContent='⏳ Đang gửi...';btn.disabled=true;
-  callApi({action:'submit',submission:sub})
-    .then(function(r){
-      btn.textContent='✅ Gửi danh sách';btn.disabled=false;
-      if(r&&r.status==='success'){vehicles=[];saveDraft();render();showToast('✅ Đã gửi '+sub.vehicleCount+' xe lên Google Sheets!')}
-      else{showToast('Lỗi: '+(r?r.message:'unknown'),'error')}
+  if(!editingSubId && !validateSubmitter())return;
+  var btn=this, oldTxt=btn.textContent;
+  btn.disabled=true;btn.textContent='⏳ Đang kiểm tra biển số...';
+  var plates=vehicles.map(function(v){return v.bienSo});
+  callApi({action:'checkPlates',plates:plates,excludeId:editingSubId||''})
+    .then(function(cr){
+      var dup=(cr&&cr.status==='success'&&cr.existing&&cr.existing.length)?cr.existing:[];
+      if(dup.length){
+        if(!confirm('⚠️ Các biển số sau ĐÃ TỒN TẠI trong hệ thống (có thể đã được nộp trước đó):\n\n'+dup.join(', ')+'\n\nBạn vẫn muốn tiếp tục?')){
+          btn.disabled=false;btn.textContent=oldTxt;return;
+        }
+      }
+      doSendOrUpdate(btn,oldTxt);
     })
-    .catch(function(e){btn.textContent='✅ Gửi danh sách';btn.disabled=false;showToast('Lỗi kết nối: '+String(e),'error')});
+    .catch(function(){doSendOrUpdate(btn,oldTxt)});
+});
+
+function doSendOrUpdate(btn,oldTxt){
+  btn.textContent='⏳ Đang gửi...';btn.disabled=true;
+  if(editingSubId){
+    callApi({action:'updateOwn',id:editingSubId,vehicles:JSON.parse(JSON.stringify(vehicles)),phone:editingSubmitterAuth.phone,email:editingSubmitterAuth.email})
+      .then(function(r){
+        btn.disabled=false;btn.textContent=oldTxt;
+        if(r&&r.status==='success'){
+          var n=vehicles.length;
+          exitEditMode();
+          showToast('✅ Đã cập nhật hồ sơ ('+n+' xe)');
+          document.getElementById('btnLookup').click();
+        }else{showToast('Lỗi: '+(r?r.message:'unknown'),'error')}
+      })
+      .catch(function(e){btn.disabled=false;btn.textContent=oldTxt;showToast('Lỗi kết nối: '+String(e),'error')});
+  }else{
+    saveSubmitter();
+    var sub={
+      id:Date.now().toString(36)+Math.random().toString(36).substr(2,5),
+      timestamp:new Date().toISOString(),
+      submitter:{hoTen:val('submitterName'),sdt:val('submitterPhone'),email:val('submitterEmail')},
+      vehicles:JSON.parse(JSON.stringify(vehicles)),
+      vehicleCount:vehicles.length
+    };
+    callApi({action:'submit',submission:sub})
+      .then(function(r){
+        btn.disabled=false;btn.textContent=oldTxt;
+        if(r&&r.status==='success'){vehicles=[];saveDraft();render();showToast('✅ Đã gửi '+sub.vehicleCount+' xe lên hệ thống!')}
+        else{showToast('Lỗi: '+(r?r.message:'unknown'),'error')}
+      })
+      .catch(function(e){btn.disabled=false;btn.textContent=oldTxt;showToast('Lỗi kết nối: '+String(e),'error')});
+  }
+}
+
+/* ===== Đơn vị sửa / thêm xe vào hồ sơ đã nộp ===== */
+function lockSubmitter(on){
+  ['submitterName','submitterPhone','submitterEmail'].forEach(function(id){var el=document.getElementById(id);if(el){el.readOnly=on;el.style.background=on?'#eef1f5':'';el.style.cursor=on?'not-allowed':''}});
+}
+function setEditUI(on){
+  document.getElementById('editBanner').style.display=on?'block':'none';
+  var t=document.getElementById('submitCardTitle'),sub=document.getElementById('submitCardSub'),b=document.getElementById('btnSubmit');
+  if(on){t.innerHTML='<span class="icon">💾</span> Cập nhật hồ sơ đã nộp';sub.textContent='Thêm/sửa/xóa xe rồi bấm để lưu thay đổi vào hồ sơ đã nộp';b.textContent='💾 Cập nhật hồ sơ';b.className='btn btn-primary';b.style.padding='14px 40px';b.style.fontSize='1rem';}
+  else{t.innerHTML='<span class="icon">📨</span> Gửi danh sách xe';sub.textContent='Sau khi kiểm tra danh sách, nhấn để gửi lên bộ phận tổng hợp';b.textContent='✅ Gửi danh sách';b.className='btn btn-success';b.style.padding='14px 40px';b.style.fontSize='1rem';}
+}
+function editSubmission(subId){
+  var s=null;for(var i=0;i<lkSubs.length;i++){if(String(lkSubs[i].id)===String(subId)){s=lkSubs[i];break}}
+  if(!s){showToast('Không tìm thấy hồ sơ','error');return}
+  if(!editingSubId){preEditDraft=vehicles.slice()}
+  editingSubId=String(s.id);
+  editingSubmitterAuth={phone:(s.submitter&&s.submitter.sdt)||'',email:(s.submitter&&s.submitter.email)||''};
+  vehicles=JSON.parse(JSON.stringify(s.vehicles||[]));
+  editIdx=-1;
+  setVal('submitterName',s.submitter&&s.submitter.hoTen);setVal('submitterPhone',s.submitter&&s.submitter.sdt);setVal('submitterEmail',s.submitter&&s.submitter.email);
+  lockSubmitter(true);
+  document.getElementById('editBannerInfo').textContent='Nộp lúc '+fmtT(s.timestamp)+' • '+((s.vehicles||[]).length)+' xe ban đầu. Mọi thay đổi chỉ lưu khi bấm "Cập nhật hồ sơ".';
+  setEditUI(true);
+  clearForm();render();
+  window.scrollTo({top:0,behavior:'smooth'});
+  showToast('Đã mở hồ sơ để sửa — thêm/sửa/xóa xe rồi bấm "Cập nhật hồ sơ"');
+}
+function exitEditMode(){
+  editingSubId=null;
+  vehicles=preEditDraft?preEditDraft.slice():[];
+  preEditDraft=null;editIdx=-1;
+  lockSubmitter(false);setEditUI(false);loadSubmitter();
+  saveDraft();render();clearForm();
+}
+document.getElementById('btnCancelEdit').addEventListener('click',function(){
+  if(!editingSubId)return;
+  exitEditMode();
+  showToast('Đã thoát chế độ sửa hồ sơ','info');
 });
 
 /* ===== Tra cứu hồ sơ (API) ===== */
@@ -441,13 +532,15 @@ document.getElementById('btnLookup').addEventListener('click',function(){
         div.innerHTML='<div style="text-align:center;padding:30px;color:#999"><span style="font-size:2rem;display:block;margin-bottom:8px">🔍</span><p>Không tìm thấy hồ sơ nào</p></div>';return;
       }
       var subs=r.submissions.sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp)});
+      lkSubs=subs;
       var total=0;for(var i=0;i<subs.length;i++)total+=subs[i].vehicleCount;
       var h='<div style="padding:12px 16px;background:#e8f5e9;border-radius:8px;margin-bottom:16px;font-size:.9rem">✅ Tìm thấy <strong>'+subs.length+'</strong> lượt nộp — <strong>'+total+'</strong> xe</div>';
       for(var i=0;i<subs.length;i++){
         var s=subs[i],tm=fmtT(s.timestamp);
         h+='<div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:12px;overflow:hidden">';
         h+='<div style="padding:12px 16px;background:#f0f4f8;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">';
-        h+='<strong style="color:#1a237e">🕐 '+tm+'</strong> <span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600">🚗 '+s.vehicleCount+' xe</span></div>';
+        h+='<strong style="color:#1a237e">🕐 '+tm+'</strong> <span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600">🚗 '+s.vehicleCount+' xe</span>';
+        h+='<button class="btn btn-primary btn-sm" style="float:right" onclick="event.stopPropagation();editSubmission(\''+s.id+'\')">✏️ Sửa / Thêm xe</button></div>';
         h+='<div style="display:none;padding:12px 16px"><div class="table-wrapper" style="display:block"><table class="data-table"><thead><tr><th>STT</th><th>Biển số</th><th>Đơn vị</th><th>Loại PH</th><th>TT/Ghế</th><th>Chủ xe</th></tr></thead><tbody>';
         for(var j=0;j<s.vehicles.length;j++){var v=s.vehicles[j];h+='<tr><td>'+(j+1)+'</td><td><strong>'+esc(v.bienSo)+'</strong></td><td>'+esc(v.donVi)+'</td><td>'+esc(v.loaiPH)+'</td><td>'+esc(v.taiTrong)+'</td><td>'+esc(v.chuSoHuu)+'</td></tr>'}
         h+='</tbody></table></div></div></div>';
